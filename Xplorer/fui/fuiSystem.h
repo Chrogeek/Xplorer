@@ -477,13 +477,19 @@ namespace fui {
 			setLinkedListZOrder(id, zPosition);
 		}
 		void createLinkedListObject(int id, int parentID) {
-			object &o = objectData[id], &p = objectData[parentID];
-			if (p.lastChild != fuiObjectNull)
-				addLinkedListBack(p.lastChild, id);
-			else {
-				p.lastChild = p.firstChild = id;
-				o.parentID = parentID;
+			if (parentID == fuiObjectNull) {
+				object &o = objectData[id];
+				o.parentID = fuiObjectNull;
 				o.lastChild = o.firstChild = fuiObjectNull;
+			} else {
+				object &o = objectData[id], &p = objectData[parentID];
+				if (p.lastChild != fuiObjectNull)
+					addLinkedListBack(p.lastChild, id);
+				else {
+					p.lastChild = p.firstChild = id;
+					o.parentID = parentID;
+					o.lastChild = o.firstChild = fuiObjectNull;
+				}
 			}
 		}
 		void addLinkedListFront(int id, int destID) {
