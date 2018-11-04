@@ -6,8 +6,8 @@ This is an assignment for the Fundamentals of Programming course @ Tsinghua Univ
 
 ## Progress
 
-1.[x] Framework & Demo
-2.[ ] Translate mini-I-Wanna to this project. (And remove the demo)
-3.[ ] Set new rules.
-4.[ ] Make resources.
-5.[ ] Design levels.
+- [x] Framework & Demo
+- [ ] Translate mini-I-Wanna to this project. (And remove the demo)
+- [ ] Set new rules.
+- [ ] Make resources.
+- [ ] Design levels.
