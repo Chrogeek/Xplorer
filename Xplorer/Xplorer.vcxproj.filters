@@ -21,19 +21,28 @@
     <ClInclude Include="fui\fuiDefs.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="fui\fuiGDI.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="fui\fuiGDIplus.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="fui\fuiObject.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="fui\fuiSystem.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="fui\fuiTimer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="gdiPlus.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="utility.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ui.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="fui\fuiGDI.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,5 +50,33 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ui.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="gdiPlus.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="fui\fuiSystem.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="fui\fuiGDI.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="fui\fuiTimer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="fui\fui.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Xplorer.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="images\icon.png">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

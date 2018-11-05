@@ -116,16 +116,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="constants.h" />
     <ClInclude Include="fui\fui.h" />
     <ClInclude Include="fui\fuiDefs.h" />
     <ClInclude Include="fui\fuiGDI.h" />
-    <ClInclude Include="fui\fuiGDIplus.h" />
-    <ClInclude Include="fui\fuiObject.h" />
     <ClInclude Include="fui\fuiSystem.h" />
     <ClInclude Include="fui\fuiTimer.h" />
+    <ClInclude Include="gdiPlus.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="ui.h" />
+    <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="fui\fui.cpp" />
+    <ClCompile Include="fui\fuiGDI.cpp" />
+    <ClCompile Include="fui\fuiSystem.cpp" />
+    <ClCompile Include="fui\fuiTimer.cpp" />
+    <ClCompile Include="gdiPlus.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ui.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Xplorer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="images\icon.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

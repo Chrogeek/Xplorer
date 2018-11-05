@@ -6,16 +6,16 @@ const int fuiVersion = MAKELONG(MAKEWORD(1, 1), MAKEWORD(0, 1));
 enum fuiEventType {
 	fuiEventInitialize = 1,	// event args: 0
 	fuiEventTerminate,		// event args: 0
-	fuiEventMouseDown,		// event args: 4, mouse button, shift/control keys, mouse x, mouse y
-	fuiEventMouseMove,		// event args: 4, mouse button, shift/control keys, mouse x, mouse y
-	fuiEventMouseUp,		// event args: 4, mouse button, shift/control keys, mouse x, mouse y
-	fuiEventMouseWheel,		// event args: 3, mouse wheel count, mouse x, mouse y
+	fuiEventMouseDown,		// event args: 4, mouse button, shift/ctrl/alt keys, mouse x, mouse y
+	fuiEventMouseMove,		// event args: 4, mouse button, shift/ctrl/alt keys, mouse x, mouse y
+	fuiEventMouseUp,		// event args: 4, mouse button, shift/ctrl/alt keys, mouse x, mouse y
+	fuiEventMouseWheel,		// event args: 4, mouse wheel count, shift/ctrl/alt keys, mouse x, mouse y
 	fuiEventMouseEnter,		// event args: 0
 	fuiEventMouseLeave,		// event args: 0
-	fuiEventDoubleClick,	// event args: 4, mouse button, shift/control keys, mouse x, mouse y
-	fuiEventKeyDown,		// event args: 1, key code
+	fuiEventDoubleClick,	// event args: 4, mouse button, shift/ctrl/alt keys, mouse x, mouse y
+	fuiEventKeyDown,		// event args: 2, key code, shift/ctrl/alt keys
 	fuiEventKeyPress,		// event args: 1, ascii code
-	fuiEventKeyUp,			// event args: 1, key code
+	fuiEventKeyUp,			// event args: 2, key code, shift/ctrl/alt keys
 	fuiEventGotFocus,		// event args: 0
 	fuiEventLostFocus,		// event args: 0
 	fuiEventResize,			// event args: 0
