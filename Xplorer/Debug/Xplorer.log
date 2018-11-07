@@ -1,4 +1,6 @@
-﻿  main.cpp
-  ui.cpp
+﻿  global.cpp
+  handler.cpp
+  main.cpp
+  utility.cpp
   正在生成代码...
   Xplorer.vcxproj -> C:\Users\Chrogeek\Desktop\Xplorer\Debug\Xplorer.exe

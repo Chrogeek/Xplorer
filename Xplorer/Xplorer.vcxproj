@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{0048A283-25FC-40C1-8210-8E35077F039C}</ProjectGuid>
+    <ProjectGuid>{131528D8-AD13-4D34-B86A-08370DDF351D}</ProjectGuid>
     <RootNamespace>Xplorer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -76,7 +76,6 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -116,31 +115,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="constants.h" />
-    <ClInclude Include="fui\fui.h" />
-    <ClInclude Include="fui\fuiDefs.h" />
-    <ClInclude Include="fui\fuiGDI.h" />
-    <ClInclude Include="fui\fuiSystem.h" />
-    <ClInclude Include="fui\fuiTimer.h" />
-    <ClInclude Include="gdiPlus.h" />
+    <ClCompile Include="global.cpp" />
+    <ClCompile Include="handler.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="utility.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="defs.h" />
+    <ClInclude Include="handler.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="ui.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="fui\fui.cpp" />
-    <ClCompile Include="fui\fuiGDI.cpp" />
-    <ClCompile Include="fui\fuiSystem.cpp" />
-    <ClCompile Include="fui\fuiTimer.cpp" />
-    <ClCompile Include="gdiPlus.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="ui.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="Xplorer.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="images\icon.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
