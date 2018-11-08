@@ -5,6 +5,7 @@
 
 void initializeGame();
 
+void gameTimer(HWND, UINT);
 void gameKeyDown(HWND, int);
 void gameKeyUp(HWND, int);
 void gameMouseDown(HWND, int, int, int);

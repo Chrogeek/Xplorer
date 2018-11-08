@@ -4,8 +4,7 @@
 #include <windows.h>
 #include <wincodec.h>
 
-#define safeRelease(p) if (p != NULL) p->Release(), p = NULL;
-#define errorCheck(p) if (FAILED(p)) return (p);
+#define safeRelease(p) if (p != NULL) { p->Release(); p = NULL; }
 
 #ifndef HINST_THISCOMPONENT
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -28,6 +27,8 @@ struct buttonUI {
 void addButton(int, float, float, float, float, const WCHAR *);
 buttonUI *getButton(int);
 
+void disableAllButtons();
+
 bool isInRect(float, float, float, float, float, float);
 bool isInInterval(float, float, float);
 bool isInRect(int, int, int, int, int, int);
@@ -42,4 +43,6 @@ int getClickedButtonID(float, float);
 
 void debugPrintF(const char *, ...);
 HRESULT drawButton(buttonUI *, ID2D1HwndRenderTarget *, IWICImagingFactory *);
+
+int dcmp(float);
 #endif

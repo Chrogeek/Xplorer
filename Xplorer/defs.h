@@ -1,12 +1,11 @@
 #ifndef XPLORER_DEFS_H
 #define XPLORER_DEFS_H
-#pragma comment(lib, "d2d1.lib")
-#pragma comment(lib, "windowscodecs.lib")
 
 #include <d2d1.h>
 #include <windows.h>
 
 const int bufferSize = 4096;
+const int smallBufferSize = 256;
 
 const char appName[] = "Xplorer";
 const int appVersion = MAKELONG(MAKEWORD(0, 0), MAKEWORD(0, 0));
@@ -20,6 +19,16 @@ const int windowClientHeight = 672;
 // const int bufferHeight = 1536;
 
 const WCHAR gameFontName[] = L"Microsoft YaHei UI";
+
+const WCHAR wallImageName[] = L"images/wall.png";
+/*const WCHAR heroImageName[24][smallBufferSize] = {L"images/hero0.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
+L"images/hero4.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
+L"images/hero8.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
+L"images/hero12.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
+L"images/hero16.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
+L"images/hero20.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png"
+};*/
+const WCHAR heroImageName[] = L"images/hero.png";
 
 const int XplorerLeftButton = 1;
 const int XplorerRightButton = 2;
@@ -37,6 +46,42 @@ const int buttonTutorial = 4;
 const int buttonNull = -1;
 
 const int heroSize = 32;
+const int mapWidth = 28;
+const int mapHeight = 21;
+
+const int heroLeft = 12;
+const int heroRight = 0;
+const int heroStanding = 0;
+const int heroWalking = 4;
+const int heroJumping = 8;
+
+const int blockEmpty = 0;
+const int blockWall = 1;
+const int blockStartingPoint = 2;
+const int blockCheckpoint = 3;
+
+const int maxFPS = 30;
+const int timerInterval = int(1000.f / maxFPS);
+
+const float accelerationX = 4.0f;
+const float accelerationY = 19.6f;
+const float maxVelocityX = 8.f * heroSize;
+const float maxVelocityY = 10.5f * heroSize;
+
+const float epsilon = 4e-7f;
+
+const UINT gameTimerID = 100;
+
+enum XplorerResult {
+	fileNotFound = -1,
+	fileBroken = -2,
+	okay = 0
+};
+
+enum XplorerDirection {
+	directionLeft = 0,
+	directionRight
+};
 
 // Key code constants
 //winuser.h 文件中提到了字符0-9,A-Z的取值范围，

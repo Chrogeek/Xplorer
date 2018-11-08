@@ -12,3 +12,4 @@ ID2D1Factory *d2dFactory = NULL;
 IWICImagingFactory *imageFactory = NULL;
 vector<buttonUI> buttons;
 map<int, int> buttonID;
+bool isTimerOn;

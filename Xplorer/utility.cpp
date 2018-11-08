@@ -73,109 +73,112 @@ HRESULT loadResourceBitmap(
 	// Find the resource then load it
 	imageResHandle = FindResource(HINST_THISCOMPONENT, resourceName, resourceType);
 	hr = imageResHandle ? S_OK : E_FAIL;
-	errorCheck(hr);
-	imageResDataHandle = LoadResource(HINST_THISCOMPONENT, imageResHandle);
 
+	if (SUCCEEDED(hr)) {
+		imageResDataHandle = LoadResource(HINST_THISCOMPONENT, imageResHandle);
+	}
 	hr = imageResDataHandle ? S_OK : E_FAIL;
 
 	// Lock the resource and calculate the image's size
-	errorCheck(hr);
-	// Lock it to get the system memory pointer
-	pImageFile = LockResource(imageResDataHandle);
-
+	if (SUCCEEDED(hr)) {
+		// Lock it to get the system memory pointer
+		pImageFile = LockResource(imageResDataHandle);
+	}
 	hr = pImageFile ? S_OK : E_FAIL;
-	errorCheck(hr);
-	// Calculate the size
-	imageFileSize = SizeofResource(HINST_THISCOMPONENT, imageResHandle);
-
+	if (SUCCEEDED(hr)) {
+		// Calculate the size
+		imageFileSize = SizeofResource(HINST_THISCOMPONENT, imageResHandle);
+	}
 	hr = imageFileSize ? S_OK : E_FAIL;
 
 	// Create an IWICStream object
-	errorCheck(hr);
-	// Create a WIC stream to map onto the memory
-	hr = pIWICFactory->CreateStream(&pStream);
-
-	errorCheck(hr);
-	// Initialize the stream with the memory pointer and size
-	hr = pStream->InitializeFromMemory(
-		reinterpret_cast<BYTE*>(pImageFile),
-		imageFileSize
-	);
-
-	// Create IWICBitmapDecoder
-	errorCheck(hr);
-	// Create a decoder for the stream
-	hr = pIWICFactory->CreateDecoderFromStream(
-		pStream,
-		NULL,
-		WICDecodeMetadataCacheOnLoad,
-		&pDecoder
-	);
-
-	// Retrieve a frame from the image and store it in an IWICBitmapFrameDecode object
-	errorCheck(hr);
-	// Create the initial frame
-	hr = pDecoder->GetFrame(0, &pSource);
-
-	// Before Direct2D can use the image, it must be converted to the 32bppPBGRA pixel format.
-	// To convert the image format, use the IWICImagingFactory::CreateFormatConverter method to create an IWICFormatConverter object, then use the IWICFormatConverter object's Initialize method to perform the conversion.
-	errorCheck(hr);
-	// Convert the image format to 32bppPBGRA
-	// (DXGI_FORMAT_B8G8R8A8_UNORM + D2D1_ALPHA_MODE_PREMULTIPLIED).
-	hr = pIWICFactory->CreateFormatConverter(&pConverter);
-
-	errorCheck(hr);
-	// If a new width or height was specified, create and
-	// IWICBitmapScaler and use it to resize the image.
-	if (destinationWidth != 0 || destinationHeight != 0) {
-		UINT originalWidth;
-		UINT originalHeight;
-		hr = pSource->GetSize(&originalWidth, &originalHeight);
-		if (destinationWidth == 0) {
-			FLOAT scalar = static_cast<FLOAT>(destinationHeight) / static_cast<FLOAT>(originalHeight);
-			destinationWidth = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
-		} else if (destinationHeight == 0) {
-			FLOAT scalar = static_cast<FLOAT>(destinationWidth) / static_cast<FLOAT>(originalWidth);
-			destinationHeight = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
-		}
-
-		hr = pIWICFactory->CreateBitmapScaler(&pScaler);
-		errorCheck(hr);
-		hr = pScaler->Initialize(
-			pSource,
-			destinationWidth,
-			destinationHeight,
-			WICBitmapInterpolationModeCubic
-		);
-		errorCheck(hr);
-		hr = pConverter->Initialize(
-			pScaler,
-			GUID_WICPixelFormat32bppPBGRA,
-			WICBitmapDitherTypeNone,
-			NULL,
-			0.f,
-			WICBitmapPaletteTypeMedianCut
-		);
-	} else { // use default width and height
-		hr = pConverter->Initialize(
-			pSource,
-			GUID_WICPixelFormat32bppPBGRA,
-			WICBitmapDitherTypeNone,
-			NULL,
-			0.f,
-			WICBitmapPaletteTypeMedianCut
+	if (SUCCEEDED(hr)) {
+		// Create a WIC stream to map onto the memory
+		hr = pIWICFactory->CreateStream(&pStream);
+	}
+	if (SUCCEEDED(hr)) {
+		// Initialize the stream with the memory pointer and size
+		hr = pStream->InitializeFromMemory(
+			reinterpret_cast<BYTE*>(pImageFile),
+			imageFileSize
 		);
 	}
+	// Create IWICBitmapDecoder
+	if (SUCCEEDED(hr)) {
+		// Create a decoder for the stream
+		hr = pIWICFactory->CreateDecoderFromStream(
+			pStream,
+			NULL,
+			WICDecodeMetadataCacheOnLoad,
+			&pDecoder
+		);
+	}
+	// Retrieve a frame from the image and store it in an IWICBitmapFrameDecode object
+	if (SUCCEEDED(hr)) {
+		// Create the initial frame
+		hr = pDecoder->GetFrame(0, &pSource);
+	}
+	// Before Direct2D can use the image, it must be converted to the 32bppPBGRA pixel format.
+	// To convert the image format, use the IWICImagingFactory::CreateFormatConverter method to create an IWICFormatConverter object, then use the IWICFormatConverter object's Initialize method to perform the conversion.
+	if (SUCCEEDED(hr)) {
+		// Convert the image format to 32bppPBGRA
+		// (DXGI_FORMAT_B8G8R8A8_UNORM + D2D1_ALPHA_MODE_PREMULTIPLIED).
+		hr = pIWICFactory->CreateFormatConverter(&pConverter);
+	}
+	if (SUCCEEDED(hr)) {
+		// If a new width or height was specified, create and
+		// IWICBitmapScaler and use it to resize the image.
+		if (destinationWidth != 0 || destinationHeight != 0) {
+			UINT originalWidth;
+			UINT originalHeight;
+			hr = pSource->GetSize(&originalWidth, &originalHeight);
+			if (destinationWidth == 0) {
+				FLOAT scalar = static_cast<FLOAT>(destinationHeight) / static_cast<FLOAT>(originalHeight);
+				destinationWidth = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
+			} else if (destinationHeight == 0) {
+				FLOAT scalar = static_cast<FLOAT>(destinationWidth) / static_cast<FLOAT>(originalWidth);
+				destinationHeight = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
+			}
 
-	errorCheck(hr);
-	// Finally, Create an ID2D1Bitmap object, that can be drawn by a render target and used with other Direct2D objects
-		// Create a Direct2D bitmap from the WIC bitmap
-	hr = pRendertarget->CreateBitmapFromWicBitmap(
-		pConverter,
-		NULL,
-		ppBitmap
-	);
-
+			hr = pIWICFactory->CreateBitmapScaler(&pScaler);
+			if (SUCCEEDED(hr)) {
+				hr = pScaler->Initialize(
+					pSource,
+					destinationWidth,
+					destinationHeight,
+					WICBitmapInterpolationModeCubic
+				);
+			}
+			if (SUCCEEDED(hr)) {
+				hr = pConverter->Initialize(
+					pScaler,
+					GUID_WICPixelFormat32bppPBGRA,
+					WICBitmapDitherTypeNone,
+					NULL,
+					0.f,
+					WICBitmapPaletteTypeMedianCut
+				);
+			}
+		} else { // use default width and height
+			hr = pConverter->Initialize(
+				pSource,
+				GUID_WICPixelFormat32bppPBGRA,
+				WICBitmapDitherTypeNone,
+				NULL,
+				0.f,
+				WICBitmapPaletteTypeMedianCut
+			);
+		}
+	}
+	if (SUCCEEDED(hr)) {
+		// Finally, Create an ID2D1Bitmap object, that can be drawn by a render target and used with other Direct2D objects
+			// Create a Direct2D bitmap from the WIC bitmap
+		hr = pRendertarget->CreateBitmapFromWicBitmap(
+			pConverter,
+			NULL,
+			ppBitmap
+		);
+	}
 	safeRelease(pDecoder);
 	safeRelease(pSource);
 	safeRelease(pStream);
@@ -198,44 +201,47 @@ HRESULT loadBitmapFromFile(ID2D1RenderTarget *pRenderTarget, IWICImagingFactory 
 	IWICBitmapScaler *pScaler = NULL;
 
 	hr = pIWICFactory->CreateDecoderFromFilename(uri, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &pDecoder);
-	errorCheck(hr);
-	// Create the initial frame.
-	hr = pDecoder->GetFrame(0, &pSource);
-
-	errorCheck(hr);
-	// Convert the image format to 32bppPBGRA
-	// (DXGI_FORMAT_B8G8R8A8_UNORM + D2D1_ALPHA_MODE_PREMULTIPLIED).
-	hr = pIWICFactory->CreateFormatConverter(&pConverter);
-
-	errorCheck(hr);
-	// If a new width or height was specified, create an
-	// IWICBitmapScaler and use it to resize the image.
-	if (destinationWidth != 0 || destinationHeight != 0) {
-		UINT originalWidth, originalHeight;
-		hr = pSource->GetSize(&originalWidth, &originalHeight);
-		if (SUCCEEDED(hr)) {
-			if (destinationWidth == 0) {
-				FLOAT scalar = static_cast<FLOAT>(destinationHeight) / static_cast<FLOAT>(originalHeight);
-				destinationWidth = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
-			} else if (destinationHeight == 0) {
-				FLOAT scalar = static_cast<FLOAT>(destinationWidth) / static_cast<FLOAT>(originalWidth);
-				destinationHeight = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
-			}
-
-			hr = pIWICFactory->CreateBitmapScaler(&pScaler);
-			if (SUCCEEDED(hr)) {
-				hr = pScaler->Initialize(pSource, destinationWidth, destinationHeight, WICBitmapInterpolationModeCubic);
-			}
-			if (SUCCEEDED(hr)) {
-				hr = pConverter->Initialize(pScaler, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut);
-			}
-		}
-	} else { // Don't scale the image.
-		hr = pConverter->Initialize(pSource, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut);
+	if (SUCCEEDED(hr)) {
+		// Create the initial frame.
+		hr = pDecoder->GetFrame(0, &pSource);
 	}
-	errorCheck(hr);
-	// Create a Direct2D bitmap from the WIC bitmap.
-	hr = pRenderTarget->CreateBitmapFromWicBitmap(pConverter, NULL, ppBitmap);
+
+	if (SUCCEEDED(hr)) {
+		// Convert the image format to 32bppPBGRA
+		// (DXGI_FORMAT_B8G8R8A8_UNORM + D2D1_ALPHA_MODE_PREMULTIPLIED).
+		hr = pIWICFactory->CreateFormatConverter(&pConverter);
+	}
+	if (SUCCEEDED(hr)) {
+		// If a new width or height was specified, create an
+		// IWICBitmapScaler and use it to resize the image.
+		if (destinationWidth != 0 || destinationHeight != 0) {
+			UINT originalWidth, originalHeight;
+			hr = pSource->GetSize(&originalWidth, &originalHeight);
+			if (SUCCEEDED(hr)) {
+				if (destinationWidth == 0) {
+					FLOAT scalar = static_cast<FLOAT>(destinationHeight) / static_cast<FLOAT>(originalHeight);
+					destinationWidth = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
+				} else if (destinationHeight == 0) {
+					FLOAT scalar = static_cast<FLOAT>(destinationWidth) / static_cast<FLOAT>(originalWidth);
+					destinationHeight = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
+				}
+
+				hr = pIWICFactory->CreateBitmapScaler(&pScaler);
+				if (SUCCEEDED(hr)) {
+					hr = pScaler->Initialize(pSource, destinationWidth, destinationHeight, WICBitmapInterpolationModeCubic);
+				}
+				if (SUCCEEDED(hr)) {
+					hr = pConverter->Initialize(pScaler, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut);
+				}
+			}
+		} else { // Don't scale the image.
+			hr = pConverter->Initialize(pSource, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut);
+		}
+	}
+	if (SUCCEEDED(hr)) {
+		// Create a Direct2D bitmap from the WIC bitmap.
+		hr = pRenderTarget->CreateBitmapFromWicBitmap(pConverter, NULL, ppBitmap);
+	}
 
 	safeRelease(pDecoder);
 	safeRelease(pSource);
@@ -244,6 +250,17 @@ HRESULT loadBitmapFromFile(ID2D1RenderTarget *pRenderTarget, IWICImagingFactory 
 	safeRelease(pScaler);
 
 	return hr;
+}
+
+void disableAllButtons() {
+	for (auto btn : buttons) {
+		btn.visible = false;
+	}
+}
+
+int dcmp(float x) {
+	if (fabs(x) < epsilon) return 0;
+	return x < 0.0 ? -1 : 1;
 }
 
 D2D1_RECT_F makeRectF(float left, float top, float right, float bottom) {
@@ -271,8 +288,9 @@ HRESULT drawButton(buttonUI *button, ID2D1HwndRenderTarget *renderTarget, IWICIm
 	if (!button->visible) return result;
 	ID2D1Bitmap *bitmap = NULL;
 	result = loadBitmapFromFile(renderTarget, imageFactory, button->imageFile, (UINT)button->width, (UINT)button->height, &bitmap);
-	errorCheck(result);
-	renderTarget->DrawBitmap(bitmap, makeRectF(button->x, button->y, button->x + button->width, button->y + button->height));
+	if (SUCCEEDED(result)) {
+		renderTarget->DrawBitmap(bitmap, makeRectF(button->x, button->y, button->x + button->width, button->y + button->height));
+	}
 	safeRelease(bitmap);
 	return result;
 }

@@ -14,6 +14,9 @@ extern ID2D1Factory *d2dFactory;
 extern IWICImagingFactory *imageFactory;
 extern vector<buttonUI> buttons;
 extern map<int, int> buttonID;
+extern bool isTimerOn;
+
+HDC bufferDC = NULL;
 
 void initializeGraphics() {
 	CoInitialize(NULL);
@@ -27,34 +30,16 @@ void terminateGraphics() {
 	safeRelease(imageFactory);
 	safeRelease(d2dFactory);
 }
-/*
-void drawRectangle(HWND hwnd) {
-	ID2D1RenderTarget *d2dRenderTarget = NULL;
-	ID2D1SolidColorBrush *d2dBlackBrush = NULL;
-	HRESULT hr;
-	if (d2dRenderTarget != NULL) return;
-	D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &d2dFactory);
-	RECT rc;
-	GetClientRect(hwnd, &rc);
-	hr = d2dFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(hwnd, D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top)), &d2dRenderTarget);
 
-	char s[100];
-	sprintf_s(s, 100, "%d", hr);
-	OutputDebugStringA(s);
-
-	d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &d2dBlackBrush);
-	d2dRenderTarget->BeginDraw();
-	d2dRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-	d2dRenderTarget->DrawRectangle(D2D1::RectF(100.f, 100.f, 500.f, 500.f), d2dBlackBrush);
-	d2dRenderTarget->EndDraw();
-}
-*/
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	switch (msg) {
 		case WM_CREATE:
 		{
+			bufferDC = CreateDC("DISPLAY", NULL, NULL, NULL);
+			isTimerOn = false;
+			SetTimer(hwnd, gameTimerID, timerInterval, NULL);
 			initializeGraphics();
-			FLOAT dpiX, dpiY;
+			float dpiX, dpiY;
 			d2dFactory->GetDesktopDpi(&dpiX, &dpiY);
 
 			// Adjust window size to make its internal area (client area) just the size of windowClientWidth * windowClientHeight.
@@ -64,10 +49,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
 			MoveWindow(hwnd, rect1.left, rect1.top, (rect1.right - rect1.left) - (rect2.right - rect2.left) + (int)(windowClientWidth * 1.0 * dpiX / 96.f), (rect1.bottom - rect1.top) - (rect2.bottom - rect2.top) + (int)(windowClientHeight * 1.0 * dpiY / 96.f), true);
 			initializeGame();
+			break;
+		}
+		case WM_TIMER:
+		{
+			if (isTimerOn) {
+				gameTimer(hwnd, (UINT)wparam);
+				InvalidateRect(hwnd, NULL, false);
+			}
+			break;
 		}
 		case WM_PAINT:
 		{
+			PAINTSTRUCT ps;
+			HDC hDC = BeginPaint(hwnd, &ps);
 			gamePaint(hwnd);
+			EndPaint(hwnd, &ps);
 			break;
 		}
 		case WM_ERASEBKGND:
@@ -76,6 +73,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		}
 		case WM_DESTROY:
 		{
+			KillTimer(hwnd, gameTimerID);
+			isTimerOn = false;
 			terminateGraphics();
 			PostQuitMessage(0);
 			break;
@@ -87,6 +86,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		}
 		case WM_RBUTTONDOWN:
 		{
+			MessageBox(hwnd, "You clicked the right mouse button down.", "Info", 0);
 			gameMouseDown(hwnd, XplorerRightButton, LOWORD(lparam), HIWORD(lparam));
 			break;
 		}
@@ -103,6 +103,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		case WM_MOUSEMOVE:
 		{
 			gameMouseMove(hwnd, 0, LOWORD(lparam), HIWORD(lparam));
+			break;
+		}
+		case WM_KEYDOWN:
+		{
+			gameKeyDown(hwnd, (int)wparam);
+			break;
+		}
+		case WM_KEYUP:
+		{
+			gameKeyUp(hwnd, (int)wparam);
 			break;
 		}
 		default:
