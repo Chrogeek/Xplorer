@@ -1,51 +1,143 @@
+/*
+	File Name: utility.cpp
+
+	This file provides useful tools to help with implementation.
+	------------------------------------------------------------
+	Xplorer, yet another 2D jumping game
+	Copyright (C) 2018 Chrogeek
+
+	<https://github.com/Chrogeek/Xplorer>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <windows.h>
 #include <wincodec.h>
 #include <map>
+#include <algorithm>
 #include "defs.h"
 #include "utility.h"
 using namespace std;
 
-extern map<int, int> buttonID;
-extern vector<buttonUI> buttons;
+#define DEBUG
+
+extern ID2D1Factory *d2dFactory;
+extern IWICImagingFactory *imageFactory;
+extern ID2D1DCRenderTarget *renderTarget;
+extern buttonUI *buttons[maxStage + 1];
+/*
+extern pointVector maxVelocity;
+extern pointVector minVelocity;
+extern pointVector jumpVelocityDelta;
+extern pointVector gravityAcceleration;
+extern pointVector moveAcceleration;*/
+
+pointVector::pointVector(float x, float y) : vX(x), vY(y) {}
+
+pointVector pointVector::operator+(pointVector b) const {
+	return pointVector(vX + b.vX, vY + b.vY);
+}
+
+pointVector pointVector::operator-(pointVector b) const {
+	return pointVector(vX - b.vX, vY - b.vY);
+}
+
+pointVector pointVector::operator-() const {
+	return pointVector(-vX, -vY);
+}
+
+pointVector pointVector::operator*(float b) const {
+	return pointVector(vX * b, vY * b);
+}
+
+pointVector pointVector::operator/(float b) const {
+	return pointVector(vX / b, vY / b);
+}
+
+pointVector &pointVector::operator+=(pointVector b) {
+	vX += b.vX, vY += b.vY;
+	return *this;
+}
+
+pointVector &pointVector::operator-=(pointVector b) {
+	vX -= b.vX, vY -= b.vY;
+	return *this;
+}
+
+pointVector operator*(float a, pointVector b) {
+	return pointVector(a * b.vX, a * b.vY);
+}
+
+float minValue(float a, float b) {
+	return a < b ? a : b;
+}
+
+float maxValue(float a, float b) {
+	return a < b ? b : a;
+}
+
+void limitVelocity(pointVector &x) {
+	x.vX = minValue(maxVelocity.vX, maxValue(minVelocity.vX, x.vX));
+	x.vY = minValue(maxVelocity.vY, maxValue(minVelocity.vY, x.vY));
+}
 
 int getClickedButtonID(float X, float Y) {
-	for (auto btn : buttons) {
-		if (isInRect(X, Y, btn.x, btn.y, btn.x + btn.width, btn.y + btn.height)) return btn.id;
+	for (int i = 0; i <= maxButton; ++i) {
+		buttonUI *btn = buttons[i];
+		if (btn == NULL) continue;
+		if (isInRect(X, Y, btn->x, btn->y, btn->x + btn->width, btn->y + btn->height)) return i;
 	}
 	return buttonNull;
 }
 
-void addButton(int id, float x, float y, float width, float height, const WCHAR *fileName) {
-	buttons.push_back(buttonUI(id, x, y, width, height, fileName));
-	buttonID[id] = (int)buttons.size() - 1;
-}
-
-buttonUI *getButton(int id) {
-	return &buttons[buttonID[id]];
-}
-
 bool isInRect(float x, float y, float x1, float y1, float x2, float y2) {
-	return x1 <= x && x <= x2 && y1 <= y && y <= y2;
+	return dcmp(x1 - x) <= 0 && dcmp(x - x2) < 0 && dcmp(y1 - y) <= 0 && dcmp(y - y2) < 0;
 }
 
 bool isInInterval(float x, float x1, float x2) {
-	return x1 <= x && x <= x2;
-}
-
-bool isInRect(int x, int y, int x1, int y1, int x2, int y2) {
-	return x1 <= x && x <= x2 && y1 <= y && y <= y2;
+	return dcmp(x1 - x) <= 0 && dcmp(x - x2) < 0;
 }
 
 bool isInInterval(int x, int x1, int x2) {
-	return x1 <= x && x <= x2;
+	return x1 <= x && x < x2;
 }
 
-buttonUI::buttonUI(int id, float x, float y, float w, float h, const WCHAR *fileName) {
-	this->id = id;
+bool isInRect(int x, int y, int x1, int y1, int x2, int y2) {
+	return isInInterval(x, x1, x2) && isInInterval(y, y1, y2);
+}
+
+bool isIntervalIntersect(float l1, float r1, float l2, float r2) {
+	return dcmp(maxValue(l1, l2) - minValue(r1, r2)) < 0;
+}
+
+bool isIntervalEquivalent(float l1, float r1, float l2, float r2) {
+	return dcmp(l1, l2) == 0 && dcmp(r1, r2) == 0;
+}
+
+bool isRectIntersect(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+	return isIntervalIntersect(x1, x2, x3, x4) && isIntervalIntersect(y1, y2, y3, y4);
+}
+
+float intervalIntersectionLength(float l1, float r1, float l2, float r2) {
+	return minValue(r1, r2) - maxValue(l1, l2);
+}
+
+buttonUI::buttonUI(float x, float y, float w, float h, const WCHAR *fileName) {
 	this->x = x, this->y = y, this->width = w, this->height = h;
 	this->visible = false;
-	if (fileName != NULL) lstrcpyW(imageFile, fileName);
-	else lstrcpyW(imageFile, L"");
+	this->buttonImage = NULL;
+	loadBitmapFromFile(renderTarget, imageFactory, fileName, (UINT)w, (UINT)h, &this->buttonImage);
 }
 // Load bitmap from app's resource
 HRESULT loadResourceBitmap(
@@ -253,14 +345,21 @@ HRESULT loadBitmapFromFile(ID2D1RenderTarget *pRenderTarget, IWICImagingFactory 
 }
 
 void disableAllButtons() {
-	for (auto btn : buttons) {
-		btn.visible = false;
+	for (int i = 0; i <= maxButton; ++i) {
+		buttonUI *btn = buttons[i];
+		if (btn == NULL) continue;
+		btn->visible = false;
 	}
 }
 
 int dcmp(float x) {
 	if (fabs(x) < epsilon) return 0;
-	return x < 0.0 ? -1 : 1;
+	return x < 0.f ? -1 : 1;
+}
+
+int dcmp(float x, float y) {
+	if (fabs(x - y) < epsilon) return 0;
+	return x < y ? -1 : 1;
 }
 
 D2D1_RECT_F makeRectF(float left, float top, float right, float bottom) {
@@ -283,14 +382,7 @@ void debugPrintF(const char *strOutputString, ...) {
 #endif
 }
 
-HRESULT drawButton(buttonUI *button, ID2D1HwndRenderTarget *renderTarget, IWICImagingFactory *imageFactory) {
-	HRESULT result = S_OK;
-	if (!button->visible) return result;
-	ID2D1Bitmap *bitmap = NULL;
-	result = loadBitmapFromFile(renderTarget, imageFactory, button->imageFile, (UINT)button->width, (UINT)button->height, &bitmap);
-	if (SUCCEEDED(result)) {
-		renderTarget->DrawBitmap(bitmap, makeRectF(button->x, button->y, button->x + button->width, button->y + button->height));
-	}
-	safeRelease(bitmap);
-	return result;
+void drawButton(buttonUI *button) {
+	if (button == NULL) return;
+	renderTarget->DrawBitmap(button->buttonImage, makeRectF(button->x, button->y, button->x + button->width, button->y + button->height));
 }

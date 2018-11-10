@@ -1,8 +1,34 @@
+/*
+	File Name: defs.h
+
+	This file defines global constant symbols (constants,
+	enumerations and macros).
+	------------------------------------------------------------
+	Xplorer, yet another 2D jumping game
+	Copyright (C) 2018 Chrogeek
+
+	<https://github.com/Chrogeek/Xplorer>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef XPLORER_DEFS_H
 #define XPLORER_DEFS_H
 
 #include <d2d1.h>
 #include <windows.h>
+#include "utility.h"
 
 const int bufferSize = 4096;
 const int smallBufferSize = 256;
@@ -15,19 +41,9 @@ const char appEdition[] = "pre-Alpha";
 const int windowClientWidth = 896;
 const int windowClientHeight = 672;
 
-// const int bufferWidth = 2048;
-// const int bufferHeight = 1536;
-
 const WCHAR gameFontName[] = L"Microsoft YaHei UI";
 
 const WCHAR wallImageName[] = L"images/wall.png";
-/*const WCHAR heroImageName[24][smallBufferSize] = {L"images/hero0.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
-L"images/hero4.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
-L"images/hero8.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
-L"images/hero12.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
-L"images/hero16.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png",
-L"images/hero20.png", L"images/hero1.png", L"images/hero2.png", L"images/hero3.png"
-};*/
 const WCHAR heroImageName[] = L"images/hero.png";
 
 const int XplorerLeftButton = 1;
@@ -38,10 +54,13 @@ const int stageMainMenu = -2;
 const int stageOptions = -1;
 const int stageTutorial = 0;
 
+const int maxStage = 1;
+
 const int buttonStart = 1;
 const int buttonExit = 2;
 const int buttonOptions = 3;
 const int buttonTutorial = 4;
+const int maxButton = 4;
 
 const int buttonNull = -1;
 
@@ -60,13 +79,14 @@ const int blockWall = 1;
 const int blockStartingPoint = 2;
 const int blockCheckpoint = 3;
 
-const int maxFPS = 30;
+const int maxFPS = 80;
 const int timerInterval = int(1000.f / maxFPS);
 
-const float accelerationX = 4.0f;
-const float accelerationY = 19.6f;
-const float maxVelocityX = 8.f * heroSize;
-const float maxVelocityY = 10.5f * heroSize;
+const pointVector maxVelocity = {6.f * heroSize, 30.f * heroSize};
+const pointVector minVelocity = {-6.f * heroSize, -30.f * heroSize};
+const pointVector jumpVelocityDelta = {0.f, -10.f * heroSize};
+const pointVector gravityAcceleration = {0.f, 20.f * heroSize};
+const pointVector moveAcceleration = {8.f * heroSize, 0.f};
 
 const float epsilon = 4e-7f;
 
