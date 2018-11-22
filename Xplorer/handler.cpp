@@ -35,13 +35,14 @@ extern int currentStage;
 extern ID2D1Factory *d2dFactory;
 extern ID2D1DCRenderTarget *renderTarget;
 extern IWICImagingFactory *imageFactory;
-extern XplorerDirection face;
+//extern XplorerDirection face;
 extern ID2D1Bitmap *bitmapBackground;
 extern buttonUI *buttons[maxButton + 1];
 
 extern bool isKeyDown[128];
-extern pointVector heroVelocity;
-extern int jumpCount;
+// extern pointVector heroVelocity;
+//extern int jumpCount;
+extern gameHero hero;
 
 void gameTimer(HWND hwnd, UINT timerID) {
 	if (currentStage >= stageTutorial) {
@@ -60,11 +61,12 @@ void gameKeyDown(HWND hwnd, int keyCode) {
 	if (!isInInterval(keyCode, 0, 128)) return;
 	isKeyDown[keyCode] = true;
 	if (currentStage >= stageTutorial) {
-		if (keyCode == VK_LEFT) face = directionLeft;
-		else if (keyCode == VK_RIGHT) face = directionRight;
+		if (keyCode == VK_LEFT) hero.face = directionLeft, hero.lockX = false;
+		else if (keyCode == VK_RIGHT) hero.face = directionRight, hero.lockX = false;
 		else if (keyCode == VK_SPACE) {
-			++jumpCount;
-			if (jumpCount <= 2) heroVelocity += jumpVelocityDelta;
+			++hero.jumpCount;
+			hero.lockY = false;
+			if (hero.jumpCount <= 2) hero.velocity += jumpVelocityDelta, hero.lockY = false; // to be updated. this should not be the final acceleration scheme.
 		}
 	}
 }

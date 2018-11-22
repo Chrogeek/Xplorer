@@ -22,6 +22,8 @@
 	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <windows.h>
 #include <wincodec.h>
 #include <d2d1.h>
@@ -173,7 +175,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		}
 		case WM_RBUTTONDOWN:
 		{
-			MessageBox(hwnd, "You clicked the right mouse button down.", "Info", 0);
 			gameMouseDown(hwnd, XplorerRightButton, LOWORD(lparam), HIWORD(lparam));
 			break;
 		}
@@ -211,6 +212,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+
+	//freopen("debug.out", "w", stdout);
+
 	WNDCLASSEX wc;
 
 	memset(&wc, 0, sizeof wc);

@@ -65,6 +65,10 @@ const int maxButton = 4;
 const int buttonNull = -1;
 
 const int heroSize = 32;
+const int heroSideMargin = 9;
+const int heroTopMargin = 10;
+const int heroBottomMargin = 0;
+
 const int mapWidth = 28;
 const int mapHeight = 21;
 
@@ -72,7 +76,8 @@ const int heroLeft = 12;
 const int heroRight = 0;
 const int heroStanding = 0;
 const int heroWalking = 4;
-const int heroJumping = 8;
+const int heroFalling = 8;
+const int heroJumping = 10;
 
 const int blockEmpty = 0;
 const int blockWall = 1;
@@ -86,9 +91,12 @@ const pointVector maxVelocity = {6.f * heroSize, 30.f * heroSize};
 const pointVector minVelocity = {-6.f * heroSize, -30.f * heroSize};
 const pointVector jumpVelocityDelta = {0.f, -10.f * heroSize};
 const pointVector gravityAcceleration = {0.f, 20.f * heroSize};
-const pointVector moveAcceleration = {8.f * heroSize, 0.f};
+const pointVector moveAcceleration = {12.f * heroSize, 0.f};
 
 const float epsilon = 4e-7f;
+const float minDelta = 0.1f;
+const float midDelta = 0.3f;
+const float maxDelta = 0.5f;
 
 const UINT gameTimerID = 100;
 

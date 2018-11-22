@@ -49,10 +49,11 @@ ID2D1SolidColorBrush *brushBlack = NULL;
 
 float dpiX, dpiY;
 
-int heroDirection;
-int jumpCount;
+//int heroDirection;
+//int jumpCount;
 //float heroVelocityY;
 //float heroX, heroY;
-pointVector heroPosition, heroVelocity;
-XplorerDirection face;
+//pointVector heroPosition, heroVelocity;
+//XplorerDirection face;
+gameHero hero;
 bool isKeyDown[128];

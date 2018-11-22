@@ -87,6 +87,14 @@ float maxValue(float a, float b) {
 	return a < b ? b : a;
 }
 
+int minValue(int a, int b) {
+	return a < b ? a : b;
+}
+
+int maxValue(int a, int b) {
+	return a < b ? b : a;
+}
+
 void limitVelocity(pointVector &x) {
 	x.vX = minValue(maxVelocity.vX, maxValue(minVelocity.vX, x.vX));
 	x.vY = minValue(maxVelocity.vY, maxValue(minVelocity.vY, x.vY));
@@ -109,16 +117,16 @@ bool isInInterval(float x, float x1, float x2) {
 	return dcmp(x1 - x) <= 0 && dcmp(x - x2) < 0;
 }
 
-bool isInInterval(int x, int x1, int x2) {
-	return x1 <= x && x < x2;
-}
-
 bool isInRect(int x, int y, int x1, int y1, int x2, int y2) {
 	return isInInterval(x, x1, x2) && isInInterval(y, y1, y2);
 }
 
+bool isInInterval(int x, int x1, int x2) {
+	return x1 <= x && x < x2;
+}
+
 bool isIntervalIntersect(float l1, float r1, float l2, float r2) {
-	return dcmp(maxValue(l1, l2) - minValue(r1, r2)) < 0;
+	return dcmp(maxValue(l1, l2), minValue(r1, r2)) < 0;
 }
 
 bool isIntervalEquivalent(float l1, float r1, float l2, float r2) {
@@ -130,6 +138,30 @@ bool isRectIntersect(float x1, float y1, float x2, float y2, float x3, float y3,
 }
 
 float intervalIntersectionLength(float l1, float r1, float l2, float r2) {
+	return minValue(r1, r2) - maxValue(l1, l2);
+}
+
+bool isIntervalIntersect(int l1, int r1, int l2, int r2) {
+	return maxValue(l1, l2) < minValue(r1, r2);
+}
+
+bool isIntervalEquivalent(int l1, int r1, int l2, int r2) {
+	return l1 == l2 && r1 == r2;
+}
+
+bool isRectIntersect(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4) {
+	return isIntervalIntersect(x1, x2, x3, x4) && isIntervalIntersect(y1, y2, y3, y4);
+}
+
+bool isRectIntersect(D2D1_RECT_F r1, D2D1_RECT_F r2) {
+	return isRectIntersect(r1.left, r1.top, r1.right, r1.bottom, r2.left, r2.top, r2.right, r2.bottom);
+}
+
+pointVector rectCenter(D2D1_RECT_F rect) {
+	return pointVector((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2);
+}
+
+int intervalIntersectionLength(int l1, int r1, int l2, int r2) {
 	return minValue(r1, r2) - maxValue(l1, l2);
 }
 

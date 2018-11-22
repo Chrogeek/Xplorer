@@ -88,6 +88,9 @@
     <Link>
       <AdditionalDependencies>d2d1.lib;dwrite.lib;windowscodecs.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>editbin /SUBSYSTEM:CONSOLE $(OutDir)\$(ProjectName).exe</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

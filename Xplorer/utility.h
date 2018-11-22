@@ -61,6 +61,9 @@ struct pointVector {
 float minValue(float, float);
 float maxValue(float, float);
 
+int minValue(int, int);
+int maxValue(int, int);
+
 void limitVelocity(pointVector &);
 
 pointVector operator*(float, pointVector);
@@ -75,9 +78,20 @@ bool isInInterval(int, int, int);
 bool isIntervalIntersect(float, float, float, float);
 bool isRectIntersect(float, float, float, float, float, float, float, float);
 
+bool isRectIntersect(D2D1_RECT_F, D2D1_RECT_F);
+
+pointVector rectCenter(D2D1_RECT_F);
+
 bool isIntervalEquivalent(float, float, float, float);
 
 float intervalIntersectionLength(float, float, float, float);
+
+bool isIntervalIntersect(int, int, int, int);
+bool isRectIntersect(int, int, int, int, int, int, int, int);
+
+bool isIntervalEquivalent(int, int, int, int);
+
+int intervalIntersectionLength(int, int, int, int);
 
 HRESULT loadResourceBitmap(ID2D1RenderTarget *, IWICImagingFactory *, PCSTR, PCSTR, UINT, UINT, ID2D1Bitmap **);
 HRESULT loadBitmapFromFile(ID2D1RenderTarget *, IWICImagingFactory *, PCWSTR, UINT, UINT, ID2D1Bitmap **);

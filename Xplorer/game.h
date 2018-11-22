@@ -29,13 +29,11 @@
 #include "defs.h"
 #include "utility.h"
 
-int getHeroState(pointVector, int);
+int getHeroState(pointVector);
 void renderGame();
 void updateHero();
 void renderGame();
-int heroPositionFix(pointVector &, pointVector &);
-//int heroPositionFixX(pointVector &, pointVector &);
-//int heroPositionFixY(pointVector &, pointVector &);
+//int heroPositionAdjust(pointVector &, pointVector &);
 
 struct gameStage {
 	ID2D1Bitmap *bkgImage;
@@ -46,5 +44,19 @@ struct gameStage {
 };
 
 void newStage(int);
+
+struct gameHero {
+	pointVector position, velocity;
+	bool lockX, lockY;
+	XplorerDirection face;
+	int jumpCount;
+	void move(pointVector, float);
+};
+
+int heroPositionAdjust(gameHero &);
+int heroFixTop(gameHero &, D2D1_RECT_F);
+int heroFixBottom(gameHero &, D2D1_RECT_F);
+int heroFixLeft(gameHero &, D2D1_RECT_F);
+int heroFixRight(gameHero &, D2D1_RECT_F);
 
 #endif
