@@ -109,6 +109,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	switch (msg) {
 		case WM_CREATE:
 		{
+		//	printf("%d %d\n", sizeof(char), sizeof(wchar_t));
 			if (FAILED(initializeGraphics())) {
 				MessageBox(hwnd, "Graphics initialization failed!", "Error!", MB_ICONSTOP | MB_OK);
 				PostQuitMessage(0);

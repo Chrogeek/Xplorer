@@ -101,4 +101,5 @@ int dcmp(double);
 int dcmp(double, double);
 
 std::string intToString(int);
+std::wstring stringToWidestring(std::string);
 #endif

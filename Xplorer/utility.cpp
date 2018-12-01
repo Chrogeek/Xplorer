@@ -384,6 +384,12 @@ std::string intToString(int x) {
 	return std::string(buf);
 }
 
+std::wstring stringToWidestring(std::string str) {
+	WCHAR ans[bufferSize];
+	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, ans, bufferSize);
+	return std::wstring(ans);
+}
+
 D2D1_SIZE_U makeSizeU(int width, int height) {
 	D2D1_SIZE_U ans;
 	ans.width = width;

@@ -123,8 +123,7 @@ const int jumpKey = VK_SHIFT;
 const UINT maxJumpTime = 150; // max jump key hold time in milliseconds
 
 enum XplorerResult {
-	fileNotFound = -1,
-	fileBroken = -2,
+	fileBroken = -1,
 	okay = 0,
 	direct2DError = -3
 };

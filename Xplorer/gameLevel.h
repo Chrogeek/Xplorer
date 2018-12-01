@@ -4,6 +4,7 @@
 #include "defs.h"
 #include <string>
 #include <vector>
+#include <array>
 #include <d2d1.h>
 #include <windows.h>
 #include "json.h"
@@ -17,7 +18,7 @@ struct gameLevel {
 	int rows, columns;
 	std::vector<std::vector<int> > grid;
 	ID2D1BitmapRenderTarget *frame;
-	ID2D1Bitmap *bitmap;
+	ID2D1Bitmap *bitmap, *objects;
 	XplorerResult load(std::string);
 	pointVector initialPosition;
 	~gameLevel();
