@@ -122,6 +122,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="gameLevel.cpp" />
+    <ClCompile Include="geometry.cpp" />
     <ClCompile Include="global.cpp" />
     <ClCompile Include="handler.cpp" />
     <ClCompile Include="main.cpp" />
@@ -130,6 +132,8 @@
   <ItemGroup>
     <ClInclude Include="defs.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="gameLevel.h" />
+    <ClInclude Include="geometry.h" />
     <ClInclude Include="handler.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="utility.h" />

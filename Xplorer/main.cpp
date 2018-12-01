@@ -24,6 +24,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#include "defs.h"
 #include <windows.h>
 #include <wincodec.h>
 #include <d2d1.h>
@@ -32,16 +33,14 @@
 #include <cassert>
 #include <vector>
 #include <map>
-#include "defs.h"
 #include "utility.h"
 #include "handler.h"
-using namespace std;
 
 extern ID2D1Factory *d2dFactory;
 extern IDWriteFactory *writeFactory;
 extern IDWriteTextFormat *textFormatNormal;
 extern IWICImagingFactory *imageFactory;
-extern ID2D1DCRenderTarget *renderTarget;
+extern ID2D1DCRenderTarget *mainRenderer;
 extern buttonUI *buttons[maxButton + 1];
 extern float dpiX, dpiY;
 extern ID2D1Bitmap *bkgImage, *wallImage, *heroImage, *bitmapBackground;
@@ -50,22 +49,22 @@ extern ID2D1SolidColorBrush *brushBlack;
 HRESULT initializeGraphics() {
 	HRESULT result = S_OK;
 	if (SUCCEEDED(result)) {
-		result = CoInitialize(NULL);
+		result = CoInitialize(nullptr);
 	}
 	if (SUCCEEDED(result)) {
 		result = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &d2dFactory);
 	}
 	if (SUCCEEDED(result)) {
-		result = CoCreateInstance(CLSID_WICImagingFactory1, NULL, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, reinterpret_cast<void **>(&imageFactory));
+		result = CoCreateInstance(CLSID_WICImagingFactory1, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, reinterpret_cast<void **>(&imageFactory));
 	}
 	if (SUCCEEDED(result)) {
 		result = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown **>(&writeFactory));
 	}
 	if (SUCCEEDED(result)) {
-		result = writeFactory->CreateTextFormat(gameFontName, NULL, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 20, L"en-us", &textFormatNormal);
+		result = writeFactory->CreateTextFormat(gameFontName, nullptr, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 20, L"en-us", &textFormatNormal);
 	}
 	if (SUCCEEDED(result)) {
-		D2D1_RENDER_TARGET_PROPERTIES *renderTargetProperties = NULL;
+		D2D1_RENDER_TARGET_PROPERTIES *renderTargetProperties = nullptr;
 		renderTargetProperties = new D2D1_RENDER_TARGET_PROPERTIES;
 		renderTargetProperties->dpiX = 0.f;
 		renderTargetProperties->dpiY = 0.f;
@@ -74,28 +73,22 @@ HRESULT initializeGraphics() {
 		renderTargetProperties->minLevel = D2D1_FEATURE_LEVEL_DEFAULT;
 		renderTargetProperties->pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
 		renderTargetProperties->pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		result = d2dFactory->CreateDCRenderTarget(renderTargetProperties, &renderTarget);
+		result = d2dFactory->CreateDCRenderTarget(renderTargetProperties, &mainRenderer);
 	}
 	if (SUCCEEDED(result)) {
-		result = loadBitmapFromFile(renderTarget, imageFactory, L"images/bg_blue.png", windowClientWidth, windowClientHeight, &bitmapBackground);
+		result = loadBitmapFromFile(mainRenderer, imageFactory, L"images/bg_blue.png", windowClientWidth, windowClientHeight, &bitmapBackground);
 	}
 	if (SUCCEEDED(result)) {
-		result = loadBitmapFromFile(renderTarget, imageFactory, wallImageName, heroSize, heroSize, &wallImage);
+		result = loadBitmapFromFile(mainRenderer, imageFactory, wallImageName, unitSize, unitSize, &wallImage);
 	}
 	if (SUCCEEDED(result)) {
-		result = loadBitmapFromFile(renderTarget, imageFactory, heroImageName, heroSize * 24, heroSize, &heroImage);
+		result = loadBitmapFromFile(mainRenderer, imageFactory, heroImageName, (int)(heroSize * 24), (int)heroSize, &heroImage);
 	}
 	if (SUCCEEDED(result)) {
-		result = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &brushBlack);
+		result = mainRenderer->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &brushBlack);
 	}
 	buttons[buttonStart] = new buttonUI(300, 300, 200, 80, L"images/startButton.png");
 	buttons[buttonExit] = new buttonUI(windowClientWidth - 135, windowClientHeight - 60, 120, 45, L"images/exitButton.png");
-/*	if (FAILED(result)) {
-		safeRelease(imageFactory);
-		safeRelease(renderTarget);
-		safeRelease(writeFactory);
-		safeRelease(d2dFactory);
-	}*/
 	return result;
 }
 
@@ -107,7 +100,7 @@ void terminateGraphics() {
 	safeRelease(textFormatNormal);
 	safeRelease(brushBlack);
 	safeRelease(imageFactory);
-	safeRelease(renderTarget);
+	safeRelease(mainRenderer);
 	safeRelease(writeFactory);
 	safeRelease(d2dFactory);
 }
@@ -133,13 +126,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 			screenWidth = GetSystemMetrics(SM_CXSCREEN);
 			screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-			newWidth = int(windowClientWidth * 1.0 * dpiX / 96.f) + (rect1.right - rect1.left) - (rect2.right - rect2.left);
-			newHeight = int(windowClientHeight * 1.0 * dpiY / 96.f) + (rect1.bottom - rect1.top) - (rect2.bottom - rect2.top);
+			newWidth = int(windowClientWidth * dpiX / 96.f) + (rect1.right - rect1.left) - (rect2.right - rect2.left);
+			newHeight = int(windowClientHeight * dpiY / 96.f) + (rect1.bottom - rect1.top) - (rect2.bottom - rect2.top);
 
 			MoveWindow(hwnd, (screenWidth - newWidth) / 2, (screenHeight - newHeight) / 2, newWidth, newHeight, true);
 			initializeGame();
 			UpdateWindow(hwnd);
-			SetTimer(hwnd, gameTimerID, timerInterval, NULL);
+			SetTimer(hwnd, gameTimerID, timerInterval, nullptr);
 			break;
 		}
 		case WM_TIMER:
@@ -151,7 +144,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		{
 			PAINTSTRUCT ps;
 			HDC hDC = BeginPaint(hwnd, &ps);
-			if (SUCCEEDED(renderTarget->BindDC(hDC, &ps.rcPaint))) {
+			if (SUCCEEDED(mainRenderer->BindDC(hDC, &ps.rcPaint))) {
 				renderWindow(hwnd);
 			}
 			EndPaint(hwnd, &ps);
@@ -212,37 +205,34 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-
-	//freopen("debug.out", "w", stdout);
-
 	WNDCLASSEX wc;
 
 	memset(&wc, 0, sizeof wc);
 	wc.cbSize = sizeof wc;
 	wc.lpfnWndProc = WndProc;
 	wc.hInstance = hInstance;
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wc.lpszClassName = "WindowClass";
-	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+	wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+	wc.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
 	if (!RegisterClassEx(&wc)) {
-		MessageBox(NULL, "Window Registration Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(nullptr, "Window Registration Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
 		return 0;
 	}
 
 	char titleBuffer[bufferSize];
 	sprintf_s(titleBuffer, bufferSize, "%s %s %s", appName, appVersionString, appEdition);
 
-	HWND gameWindow = CreateWindowEx(WS_EX_CLIENTEDGE, "WindowClass", titleBuffer, WS_VISIBLE | WS_OVERLAPPED | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, windowClientWidth, windowClientHeight, NULL, NULL, hInstance, NULL);
+	HWND gameWindow = CreateWindowEx(WS_EX_CLIENTEDGE, "WindowClass", titleBuffer, WS_VISIBLE | WS_OVERLAPPED | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, windowClientWidth, windowClientHeight, nullptr, nullptr, hInstance, nullptr);
 
-	if (gameWindow == NULL) {
-		MessageBox(NULL, "Window Creation Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
+	if (gameWindow == nullptr) {
+		MessageBox(nullptr, "Window Creation Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
 		return 0;
 	}
 
 	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0) > 0) {
+	while (GetMessage(&msg, nullptr, 0, 0) > 0) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}

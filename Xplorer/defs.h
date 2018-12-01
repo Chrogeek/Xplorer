@@ -26,7 +26,12 @@
 #ifndef XPLORER_DEFS_H
 #define XPLORER_DEFS_H
 
+#define NOMINMAX // disable visual c++'s default min/max macros
+
 #include <d2d1.h>
+
+typedef D2D1_RECT_F rectFloat;
+
 #include <windows.h>
 #include "utility.h"
 
@@ -64,10 +69,13 @@ const int maxButton = 4;
 
 const int buttonNull = -1;
 
-const int heroSize = 32;
-const int heroSideMargin = 9;
-const int heroTopMargin = 10;
-const int heroBottomMargin = 0;
+const int unitSize = 32;
+
+const double heroSizeMultiplier = 1.4;
+const double heroSize = unitSize * heroSizeMultiplier;
+const double heroSideMargin = 9 * heroSizeMultiplier;
+const double heroTopMargin = 10 * heroSizeMultiplier;
+const double heroBottomMargin = 0 * heroSizeMultiplier;
 
 const int mapWidth = 28;
 const int mapHeight = 21;
@@ -85,42 +93,57 @@ const int blockStartingPoint = 2;
 const int blockCheckpoint = 3;
 
 const int maxFPS = 80;
-const int timerInterval = int(1000.f / maxFPS);
+const int timerInterval = int(1000.0 / maxFPS);
 
-const pointVector maxVelocity = {6.f * heroSize, 30.f * heroSize};
-const pointVector minVelocity = {-6.f * heroSize, -30.f * heroSize};
-const pointVector jumpVelocityDelta = {0.f, -10.f * heroSize};
-const pointVector gravityAcceleration = {0.f, 20.f * heroSize};
-const pointVector moveAcceleration = {12.f * heroSize, 0.f};
+const pointVector maxVelocity = {6.0 * unitSize, 30.0 * unitSize};
+const pointVector minVelocity = {-6.0 * unitSize, -30.0 * unitSize};
+const pointVector jumpStartVelocity = {0.0, -14.0 * unitSize};
+const pointVector jumpAcceleration = {0.0, -25.0 * unitSize};
+const pointVector gravityAcceleration = {0.0, 40.0 * unitSize};
+const pointVector moveAcceleration = {18.0 * unitSize, 0.0};
 
-const float epsilon = 4e-7f;
-const float minDelta = 0.1f;
-const float midDelta = 0.3f;
-const float maxDelta = 0.5f;
+const double epsilon = 4e-7;
+const double minDelta = 0.1;
+const double midDelta = 0.3;
+const double maxDelta = 0.5;
 
 const UINT gameTimerID = 100;
+
+const int jumpKey = VK_SHIFT;
+const UINT maxJumpTime = 150; // max jump key hold time in milliseconds
 
 enum XplorerResult {
 	fileNotFound = -1,
 	fileBroken = -2,
-	okay = 0
+	okay = 0,
+	direct2DError = -3
 };
 
-enum XplorerDirection {
+enum directionX {
 	directionLeft = 0,
 	directionRight
 };
 
-// Key code constants
-//winuser.h 文件中提到了字符0-9,A-Z的取值范围，
-//却没有对它们进行定义，所以我们只好自己来定义了
-//定义其实挺简单的，定义的数值为相应的字符的ASCII码的16进制数据
-//原文信息如下:
-//* VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
-//*	0x40 : unassigned
-//*	VK_A - VK_Z are the same as ASCII 'A' - 'Z' (0x41 - 0x5A)
+enum direction2D {
+	direction2DLeft = 0,
+	direction2DUp,
+	direction2DRight,
+	direction2DDown
+};
 
-//定义数据字符0~9
+/* Key code constants
+ *
+ * The header file <winuser.h> mentioned codes for number and alpha keys,
+ * but did not define them. Below are definitions of these virtual key
+ * macros. Macro values are the ASCII codes (hexadecimal) for the characters.
+ *
+ * According to <winuser.h>:
+ * VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
+ * 0x40 : unassigned
+ * VK_A - VK_Z are the same as ASCII 'A' - 'Z' (0x41 - 0x5A)
+ */
+
+// Number keys
 #define VK_0 (0x30)
 #define VK_1 (0x31)
 #define VK_2 (0x32)
@@ -131,7 +154,7 @@ enum XplorerDirection {
 #define VK_7 (0x37)
 #define VK_8 (0x38)
 #define VK_9 (0x39)
-//定义数据字符A~Z
+// Uppercase alpha keys
 #define VK_A (0x41)
 #define VK_B (0x42)
 #define VK_C (0x43)
@@ -158,7 +181,7 @@ enum XplorerDirection {
 #define VK_X (0x58)
 #define VK_Y (0x59)
 #define VK_Z (0x5A)
-//定义数据字符a~z
+// Lowercase alpha keys
 #define VK_a (0x61)
 #define VK_b (0x62)
 #define VK_c (0x63)

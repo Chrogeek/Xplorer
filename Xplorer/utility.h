@@ -25,66 +25,54 @@
 #ifndef XPLORER_UTILITY_H
 #define XPLORER_UTILITY_H
 
+#include "defs.h"
 #include <windows.h>
 #include <wincodec.h>
 #include <d2d1.h>
+#include <string>
 #include <vector>
-#include "defs.h"
+#include "geometry.h"
 
-#define safeRelease(p) if (p != NULL) { p->Release(); p = NULL; }
+#define safeRelease(p) if (p != nullptr) { p->Release(); p = nullptr; }
 
 #ifndef HINST_THISCOMPONENT
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 #endif
-using namespace std;
 
 struct buttonUI {
-	float x, y, width, height;
+	double x, y, width, height;
 	bool visible;
 	ID2D1Bitmap *buttonImage;
-	buttonUI(float = 0, float = 0, float = 0, float = 0, const WCHAR * = NULL);
+	buttonUI(double = 0.0, double = 0.0, double = 0.0, double = 0.0, const WCHAR * = nullptr);
 };
 
-struct pointVector {
-	float vX, vY;
-	pointVector(float = 0.f, float = 0.f);
-	pointVector operator+(pointVector) const;
-	pointVector operator-(pointVector) const;
-	pointVector operator-() const;
-	pointVector operator*(float) const;
-	pointVector operator/(float) const;
-	pointVector &operator+=(pointVector);
-	pointVector &operator-=(pointVector);
+struct rectReal {
+	double left;
+	double top;
+	double right;
+	double bottom;
 };
-
-float minValue(float, float);
-float maxValue(float, float);
-
-int minValue(int, int);
-int maxValue(int, int);
 
 void limitVelocity(pointVector &);
 
-pointVector operator*(float, pointVector);
-
 void disableAllButtons();
 
-bool isInRect(float, float, float, float, float, float);
-bool isInInterval(float, float, float);
+bool isInRect(double, double, double, double, double, double);
+bool isInInterval(double, double, double);
 bool isInRect(int, int, int, int, int, int);
 bool isInInterval(int, int, int);
 
-bool isIntervalIntersect(float, float, float, float);
-bool isRectIntersect(float, float, float, float, float, float, float, float);
+bool isIntervalIntersect(double, double, double, double);
+bool isRectIntersect(double, double, double, double, double, double, double, double);
 
-bool isRectIntersect(D2D1_RECT_F, D2D1_RECT_F);
+bool isRectIntersect(rectReal, rectReal);
 
-pointVector rectCenter(D2D1_RECT_F);
+pointVector rectCenter(rectReal);
 
-bool isIntervalEquivalent(float, float, float, float);
+bool isIntervalEquivalent(double, double, double, double);
 
-float intervalIntersectionLength(float, float, float, float);
+double intervalIntersectionLength(double, double, double, double);
 
 bool isIntervalIntersect(int, int, int, int);
 bool isRectIntersect(int, int, int, int, int, int, int, int);
@@ -96,13 +84,20 @@ int intervalIntersectionLength(int, int, int, int);
 HRESULT loadResourceBitmap(ID2D1RenderTarget *, IWICImagingFactory *, PCSTR, PCSTR, UINT, UINT, ID2D1Bitmap **);
 HRESULT loadBitmapFromFile(ID2D1RenderTarget *, IWICImagingFactory *, PCWSTR, UINT, UINT, ID2D1Bitmap **);
 
-D2D1_RECT_F makeRectF(float left, float top, float right, float bottom);
+rectFloat makeRectF(float left, float top, float right, float bottom);
+rectReal makeRectR(double left, double top, double right, double bottom);
+rectFloat rectR2F(rectReal);
+rectReal rectF2R(rectFloat);
 
-int getClickedButtonID(float, float);
+D2D1_SIZE_U makeSizeU(int, int);
+
+int getClickedButtonID(double, double);
 
 void debugPrintF(const char *, ...);
 void drawButton(buttonUI *);
 
-int dcmp(float);
-int dcmp(float, float);
+int dcmp(double);
+int dcmp(double, double);
+
+std::string intToString(int);
 #endif

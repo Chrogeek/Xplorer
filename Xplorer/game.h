@@ -1,7 +1,7 @@
 /*
 	File Name: game.h
 
-	Header file correlated to game.cpp.
+	This file defines objects used in game main process.
 	------------------------------------------------------------
 	Xplorer, yet another 2D jumping game
 	Copyright (C) 2018 Chrogeek
@@ -26,20 +26,25 @@
 #define XPLORER_GAME_H
 
 #include <d2d1.h>
+#include "json.h"
 #include "defs.h"
 #include "utility.h"
+#include "geometry.h"
+
+using json = nlohmann::json;
 
 int getHeroState(pointVector);
 void renderGame();
 void updateHero();
 void renderGame();
-//int heroPositionAdjust(pointVector &, pointVector &);
 
 struct gameStage {
 	ID2D1Bitmap *bkgImage;
 	int n, m, blocks[mapWidth][mapHeight];
 	XplorerResult loadFromFile(const WCHAR *);
+	XplorerResult loadFromJSON(const WCHAR *);
 	pointVector initialPosition;
+	json gameData;
 	~gameStage();
 };
 
@@ -48,15 +53,26 @@ void newStage(int);
 struct gameHero {
 	pointVector position, velocity;
 	bool lockX, lockY;
-	XplorerDirection face;
+	directionX face;
 	int jumpCount;
-	void move(pointVector, float);
+	void move(pointVector, double);
+	double left();
+	double top();
+	double right();
+	double bottom();
+	rectReal rect();
+};
+
+struct staticNeedle {
+	bool isDeadly;
+	direction2D face;
+	polygon poly;
 };
 
 int heroPositionAdjust(gameHero &);
-int heroFixTop(gameHero &, D2D1_RECT_F);
-int heroFixBottom(gameHero &, D2D1_RECT_F);
-int heroFixLeft(gameHero &, D2D1_RECT_F);
-int heroFixRight(gameHero &, D2D1_RECT_F);
+int heroFixTop(gameHero &, rectReal);
+int heroFixBottom(gameHero &, rectReal);
+int heroFixLeft(gameHero &, rectReal);
+int heroFixRight(gameHero &, rectReal);
 
 #endif

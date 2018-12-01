@@ -22,10 +22,10 @@
 	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "defs.h"
 #include <d2d1.h>
 #include <windows.h>
 #include <wincodec.h>
-#include "defs.h"
 #include "game.h"
 #include "handler.h"
 #include "utility.h"
@@ -33,22 +33,20 @@
 extern gameStage gameStages[maxStage + 1];
 extern int currentStage;
 extern ID2D1Factory *d2dFactory;
-extern ID2D1DCRenderTarget *renderTarget;
+extern ID2D1DCRenderTarget *mainRenderer;
 extern IWICImagingFactory *imageFactory;
-//extern XplorerDirection face;
 extern ID2D1Bitmap *bitmapBackground;
 extern buttonUI *buttons[maxButton + 1];
 
 extern bool isKeyDown[128];
-// extern pointVector heroVelocity;
-//extern int jumpCount;
 extern gameHero hero;
+extern UINT lastJumpTime;
 
 void gameTimer(HWND hwnd, UINT timerID) {
 	if (currentStage >= stageTutorial) {
 		updateHero();
 	}
-	InvalidateRect(hwnd, NULL, false);
+	InvalidateRect(hwnd, nullptr, false);
 	UpdateWindow(hwnd);
 }
 
@@ -63,10 +61,14 @@ void gameKeyDown(HWND hwnd, int keyCode) {
 	if (currentStage >= stageTutorial) {
 		if (keyCode == VK_LEFT) hero.face = directionLeft, hero.lockX = false;
 		else if (keyCode == VK_RIGHT) hero.face = directionRight, hero.lockX = false;
-		else if (keyCode == VK_SPACE) {
+		else if (keyCode == jumpKey) {
 			++hero.jumpCount;
-			hero.lockY = false;
-			if (hero.jumpCount <= 2) hero.velocity += jumpVelocityDelta, hero.lockY = false; // to be updated. this should not be the final acceleration scheme.
+			if (hero.jumpCount <= 2) { // we allow only two jumps in a row
+				hero.lockY = false;
+			//	hero.velocity += jumpVelocityDelta; // to be updated. this should not be the final acceleration scheme.
+				lastJumpTime = timeGetTime();
+				hero.velocity.vY = jumpStartVelocity.vY;
+			}
 		}
 	}
 }
@@ -79,14 +81,13 @@ void gameKeyUp(HWND hwnd, int keyCode) {
 void gameMouseDown(HWND hwnd, int button, int X, int Y) {}
 
 void gameMouseUp(HWND hwnd, int button, int X, int Y) {
-	int buttonClicked = getClickedButtonID(1.f * X, 1.f * Y);
+	int buttonClicked = getClickedButtonID((double)X, (double)Y);
 	switch (currentStage) {
 		case stageMainMenu:
 		{
 			if (buttonClicked == buttonExit) {
 				PostQuitMessage(0);
 			} else if (buttonClicked == buttonStart) {
-			//	MessageBox(NULL, "Ready to start the game!", "Info", 0);
 				disableAllButtons();
 				newStage(1);
 			}
@@ -102,25 +103,25 @@ void gameMouseUp(HWND hwnd, int button, int X, int Y) {
 void gameMouseMove(HWND hwnd, int button, int X, int Y) {}
 
 void renderWindow(HWND hwnd) {
-	if (renderTarget == NULL) return;
+	if (mainRenderer == nullptr) return;
 	switch (currentStage) {
 		case stageMainMenu:
 		{
-			renderTarget->BeginDraw();
-			renderTarget->DrawBitmap(bitmapBackground, makeRectF(0, 0, windowClientWidth, windowClientHeight));
+			mainRenderer->BeginDraw();
+			mainRenderer->DrawBitmap(bitmapBackground, makeRectF(0, 0, windowClientWidth, windowClientHeight));
 			buttonUI *btnStart = buttons[buttonStart], *btnExit = buttons[buttonExit];
 			if (btnStart) btnStart->visible = true;
 			if (btnExit) btnExit->visible = true;
 			drawButton(btnStart);
 			drawButton(btnExit);
-			renderTarget->EndDraw();
+			mainRenderer->EndDraw();
 			break;
 		}
 		default:
 		{
-			renderTarget->BeginDraw();
+			mainRenderer->BeginDraw();
 			renderGame();
-			renderTarget->EndDraw();
+			mainRenderer->EndDraw();
 			break;
 		}
 	}

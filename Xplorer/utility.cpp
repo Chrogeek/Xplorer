@@ -22,98 +22,40 @@
 	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "defs.h"
+#include <map>
+#include <string>
+#include <algorithm>
 #include <windows.h>
 #include <wincodec.h>
-#include <map>
-#include <algorithm>
-#include "defs.h"
 #include "utility.h"
-using namespace std;
 
 #define DEBUG
 
 extern ID2D1Factory *d2dFactory;
 extern IWICImagingFactory *imageFactory;
-extern ID2D1DCRenderTarget *renderTarget;
+extern ID2D1DCRenderTarget *mainRenderer;
 extern buttonUI *buttons[maxStage + 1];
-/*
-extern pointVector maxVelocity;
-extern pointVector minVelocity;
-extern pointVector jumpVelocityDelta;
-extern pointVector gravityAcceleration;
-extern pointVector moveAcceleration;*/
-
-pointVector::pointVector(float x, float y) : vX(x), vY(y) {}
-
-pointVector pointVector::operator+(pointVector b) const {
-	return pointVector(vX + b.vX, vY + b.vY);
-}
-
-pointVector pointVector::operator-(pointVector b) const {
-	return pointVector(vX - b.vX, vY - b.vY);
-}
-
-pointVector pointVector::operator-() const {
-	return pointVector(-vX, -vY);
-}
-
-pointVector pointVector::operator*(float b) const {
-	return pointVector(vX * b, vY * b);
-}
-
-pointVector pointVector::operator/(float b) const {
-	return pointVector(vX / b, vY / b);
-}
-
-pointVector &pointVector::operator+=(pointVector b) {
-	vX += b.vX, vY += b.vY;
-	return *this;
-}
-
-pointVector &pointVector::operator-=(pointVector b) {
-	vX -= b.vX, vY -= b.vY;
-	return *this;
-}
-
-pointVector operator*(float a, pointVector b) {
-	return pointVector(a * b.vX, a * b.vY);
-}
-
-float minValue(float a, float b) {
-	return a < b ? a : b;
-}
-
-float maxValue(float a, float b) {
-	return a < b ? b : a;
-}
-
-int minValue(int a, int b) {
-	return a < b ? a : b;
-}
-
-int maxValue(int a, int b) {
-	return a < b ? b : a;
-}
 
 void limitVelocity(pointVector &x) {
-	x.vX = minValue(maxVelocity.vX, maxValue(minVelocity.vX, x.vX));
-	x.vY = minValue(maxVelocity.vY, maxValue(minVelocity.vY, x.vY));
+	x.vX = std::min(maxVelocity.vX, std::max(minVelocity.vX, x.vX));
+	x.vY = std::min(maxVelocity.vY, std::max(minVelocity.vY, x.vY));
 }
 
-int getClickedButtonID(float X, float Y) {
+int getClickedButtonID(double X, double Y) {
 	for (int i = 0; i <= maxButton; ++i) {
 		buttonUI *btn = buttons[i];
-		if (btn == NULL) continue;
+		if (btn == nullptr) continue;
 		if (isInRect(X, Y, btn->x, btn->y, btn->x + btn->width, btn->y + btn->height)) return i;
 	}
 	return buttonNull;
 }
 
-bool isInRect(float x, float y, float x1, float y1, float x2, float y2) {
+bool isInRect(double x, double y, double x1, double y1, double x2, double y2) {
 	return dcmp(x1 - x) <= 0 && dcmp(x - x2) < 0 && dcmp(y1 - y) <= 0 && dcmp(y - y2) < 0;
 }
 
-bool isInInterval(float x, float x1, float x2) {
+bool isInInterval(double x, double x1, double x2) {
 	return dcmp(x1 - x) <= 0 && dcmp(x - x2) < 0;
 }
 
@@ -125,24 +67,24 @@ bool isInInterval(int x, int x1, int x2) {
 	return x1 <= x && x < x2;
 }
 
-bool isIntervalIntersect(float l1, float r1, float l2, float r2) {
-	return dcmp(maxValue(l1, l2), minValue(r1, r2)) < 0;
+bool isIntervalIntersect(double l1, double r1, double l2, double r2) {
+	return dcmp(std::max(l1, l2), std::min(r1, r2)) < 0;
 }
 
-bool isIntervalEquivalent(float l1, float r1, float l2, float r2) {
+bool isIntervalEquivalent(double l1, double r1, double l2, double r2) {
 	return dcmp(l1, l2) == 0 && dcmp(r1, r2) == 0;
 }
 
-bool isRectIntersect(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+bool isRectIntersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
 	return isIntervalIntersect(x1, x2, x3, x4) && isIntervalIntersect(y1, y2, y3, y4);
 }
 
-float intervalIntersectionLength(float l1, float r1, float l2, float r2) {
-	return minValue(r1, r2) - maxValue(l1, l2);
+double intervalIntersectionLength(double l1, double r1, double l2, double r2) {
+	return std::min(r1, r2) - std::max(l1, l2);
 }
 
 bool isIntervalIntersect(int l1, int r1, int l2, int r2) {
-	return maxValue(l1, l2) < minValue(r1, r2);
+	return std::max(l1, l2) < std::min(r1, r2);
 }
 
 bool isIntervalEquivalent(int l1, int r1, int l2, int r2) {
@@ -153,23 +95,23 @@ bool isRectIntersect(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int
 	return isIntervalIntersect(x1, x2, x3, x4) && isIntervalIntersect(y1, y2, y3, y4);
 }
 
-bool isRectIntersect(D2D1_RECT_F r1, D2D1_RECT_F r2) {
+bool isRectIntersect(rectReal r1, rectReal r2) {
 	return isRectIntersect(r1.left, r1.top, r1.right, r1.bottom, r2.left, r2.top, r2.right, r2.bottom);
 }
 
-pointVector rectCenter(D2D1_RECT_F rect) {
+pointVector rectCenter(rectReal rect) {
 	return pointVector((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2);
 }
 
 int intervalIntersectionLength(int l1, int r1, int l2, int r2) {
-	return minValue(r1, r2) - maxValue(l1, l2);
+	return std::min(r1, r2) - std::max(l1, l2);
 }
 
-buttonUI::buttonUI(float x, float y, float w, float h, const WCHAR *fileName) {
+buttonUI::buttonUI(double x, double y, double w, double h, const WCHAR *fileName) {
 	this->x = x, this->y = y, this->width = w, this->height = h;
 	this->visible = false;
-	this->buttonImage = NULL;
-	loadBitmapFromFile(renderTarget, imageFactory, fileName, (UINT)w, (UINT)h, &this->buttonImage);
+	this->buttonImage = nullptr;
+	loadBitmapFromFile(mainRenderer, imageFactory, fileName, (UINT)w, (UINT)h, &this->buttonImage);
 }
 // Load bitmap from app's resource
 HRESULT loadResourceBitmap(
@@ -183,15 +125,15 @@ HRESULT loadResourceBitmap(
 ) {
 	HRESULT hr = S_OK;
 
-	IWICBitmapDecoder* pDecoder = NULL;
-	IWICBitmapFrameDecode* pSource = NULL;
-	IWICStream* pStream = NULL;
-	IWICFormatConverter* pConverter = NULL;
-	IWICBitmapScaler* pScaler = NULL;
+	IWICBitmapDecoder* pDecoder = nullptr;
+	IWICBitmapFrameDecode* pSource = nullptr;
+	IWICStream* pStream = nullptr;
+	IWICFormatConverter* pConverter = nullptr;
+	IWICBitmapScaler* pScaler = nullptr;
 
-	HRSRC imageResHandle = NULL;
-	HGLOBAL imageResDataHandle = NULL;
-	void* pImageFile = NULL;
+	HRSRC imageResHandle = nullptr;
+	HGLOBAL imageResDataHandle = nullptr;
+	void* pImageFile = nullptr;
 	DWORD imageFileSize = 0;
 
 	// Find the resource then load it
@@ -232,7 +174,7 @@ HRESULT loadResourceBitmap(
 		// Create a decoder for the stream
 		hr = pIWICFactory->CreateDecoderFromStream(
 			pStream,
-			NULL,
+			nullptr,
 			WICDecodeMetadataCacheOnLoad,
 			&pDecoder
 		);
@@ -278,7 +220,7 @@ HRESULT loadResourceBitmap(
 					pScaler,
 					GUID_WICPixelFormat32bppPBGRA,
 					WICBitmapDitherTypeNone,
-					NULL,
+					nullptr,
 					0.f,
 					WICBitmapPaletteTypeMedianCut
 				);
@@ -288,7 +230,7 @@ HRESULT loadResourceBitmap(
 				pSource,
 				GUID_WICPixelFormat32bppPBGRA,
 				WICBitmapDitherTypeNone,
-				NULL,
+				nullptr,
 				0.f,
 				WICBitmapPaletteTypeMedianCut
 			);
@@ -299,7 +241,7 @@ HRESULT loadResourceBitmap(
 			// Create a Direct2D bitmap from the WIC bitmap
 		hr = pRendertarget->CreateBitmapFromWicBitmap(
 			pConverter,
-			NULL,
+			nullptr,
 			ppBitmap
 		);
 	}
@@ -318,13 +260,13 @@ HRESULT loadResourceBitmap(
 HRESULT loadBitmapFromFile(ID2D1RenderTarget *pRenderTarget, IWICImagingFactory *pIWICFactory, PCWSTR uri, UINT destinationWidth, UINT destinationHeight, ID2D1Bitmap **ppBitmap) {
 	HRESULT hr = S_OK;
 
-	IWICBitmapDecoder *pDecoder = NULL;
-	IWICBitmapFrameDecode *pSource = NULL;
-	IWICStream *pStream = NULL;
-	IWICFormatConverter *pConverter = NULL;
-	IWICBitmapScaler *pScaler = NULL;
+	IWICBitmapDecoder *pDecoder = nullptr;
+	IWICBitmapFrameDecode *pSource = nullptr;
+	IWICStream *pStream = nullptr;
+	IWICFormatConverter *pConverter = nullptr;
+	IWICBitmapScaler *pScaler = nullptr;
 
-	hr = pIWICFactory->CreateDecoderFromFilename(uri, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &pDecoder);
+	hr = pIWICFactory->CreateDecoderFromFilename(uri, nullptr, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &pDecoder);
 	if (SUCCEEDED(hr)) {
 		// Create the initial frame.
 		hr = pDecoder->GetFrame(0, &pSource);
@@ -355,16 +297,16 @@ HRESULT loadBitmapFromFile(ID2D1RenderTarget *pRenderTarget, IWICImagingFactory 
 					hr = pScaler->Initialize(pSource, destinationWidth, destinationHeight, WICBitmapInterpolationModeCubic);
 				}
 				if (SUCCEEDED(hr)) {
-					hr = pConverter->Initialize(pScaler, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut);
+					hr = pConverter->Initialize(pScaler, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
 				}
 			}
 		} else { // Don't scale the image.
-			hr = pConverter->Initialize(pSource, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut);
+			hr = pConverter->Initialize(pSource, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
 		}
 	}
 	if (SUCCEEDED(hr)) {
 		// Create a Direct2D bitmap from the WIC bitmap.
-		hr = pRenderTarget->CreateBitmapFromWicBitmap(pConverter, NULL, ppBitmap);
+		hr = pRenderTarget->CreateBitmapFromWicBitmap(pConverter, nullptr, ppBitmap);
 	}
 
 	safeRelease(pDecoder);
@@ -379,28 +321,45 @@ HRESULT loadBitmapFromFile(ID2D1RenderTarget *pRenderTarget, IWICImagingFactory 
 void disableAllButtons() {
 	for (int i = 0; i <= maxButton; ++i) {
 		buttonUI *btn = buttons[i];
-		if (btn == NULL) continue;
+		if (btn == nullptr) continue;
 		btn->visible = false;
 	}
 }
 
-int dcmp(float x) {
+int dcmp(double x) {
 	if (fabs(x) < epsilon) return 0;
-	return x < 0.f ? -1 : 1;
+	return x < 0.0 ? -1 : 1;
 }
 
-int dcmp(float x, float y) {
+int dcmp(double x, double y) {
 	if (fabs(x - y) < epsilon) return 0;
 	return x < y ? -1 : 1;
 }
 
-D2D1_RECT_F makeRectF(float left, float top, float right, float bottom) {
-	D2D1_RECT_F ret;
+rectFloat makeRectF(float left, float top, float right, float bottom) {
+	rectFloat ret;
 	ret.left = left;
 	ret.top = top;
 	ret.right = right;
 	ret.bottom = bottom;
 	return ret;
+}
+
+rectReal makeRectR(double left, double top, double right, double bottom) {
+	rectReal ret;
+	ret.left = left;
+	ret.top = top;
+	ret.right = right;
+	ret.bottom = bottom;
+	return ret;
+}
+
+rectFloat rectR2F(rectReal r) {
+	return makeRectF((float)r.left, (float)r.top, (float)r.right, (float)r.bottom);
+}
+
+rectReal rectF2R(rectFloat r) {
+	return makeRectR((double)r.left, (double)r.top, (double)r.right, (double)r.bottom);
 }
 
 void debugPrintF(const char *strOutputString, ...) {
@@ -415,6 +374,19 @@ void debugPrintF(const char *strOutputString, ...) {
 }
 
 void drawButton(buttonUI *button) {
-	if (button == NULL) return;
-	renderTarget->DrawBitmap(button->buttonImage, makeRectF(button->x, button->y, button->x + button->width, button->y + button->height));
+	if (button == nullptr) return;
+	mainRenderer->DrawBitmap(button->buttonImage, makeRectF((float)button->x, (float)button->y, (float)(button->x + button->width), (float)(button->y + button->height)));
+}
+
+std::string intToString(int x) {
+	char buf[bufferSize];
+	sprintf_s<bufferSize>(buf, "%d", x);
+	return std::string(buf);
+}
+
+D2D1_SIZE_U makeSizeU(int width, int height) {
+	D2D1_SIZE_U ans;
+	ans.width = width;
+	ans.height = height;
+	return ans;
 }

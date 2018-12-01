@@ -22,139 +22,111 @@
 	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "defs.h"
+#include <cstdio>
+#include <fstream>
+#include <algorithm>
 #include <d2d1.h>
 #include <dwrite.h>
 #include <windows.h>
-#include <stdio.h>
-#include <algorithm>
-#include "defs.h"
+#include "json.h"
 #include "game.h"
 #include "utility.h"
 
 extern bool isKeyDown[128];
 extern int currentStage;
+extern UINT lastJumpTime;
+
 extern ID2D1Bitmap *wallImage, *heroImage;
 extern gameStage gameStages[maxStage + 1];
 
-//extern int heroDirection;
-//extern XplorerDirection face;
-
 extern gameHero hero;
 
-extern ID2D1DCRenderTarget *renderTarget;
+extern ID2D1DCRenderTarget *mainRenderer;
 extern IWICImagingFactory *imageFactory;
 extern IDWriteFactory *writeFactory;
 extern IDWriteTextFormat *textFormatNormal;
 extern ID2D1SolidColorBrush *brushBlack;
 
-//extern pointVector heroPosition, heroVelocity;
-//extern int jumpCount;
+using json = nlohmann::json;
 
-D2D1_RECT_F getHeroRect(gameHero hero) {
-	D2D1_RECT_F heroRect;
-	heroRect.left = hero.position.vX + heroSideMargin, heroRect.right = hero.position.vX + heroSize - heroSideMargin;
-	heroRect.top = hero.position.vY + heroTopMargin, heroRect.bottom = hero.position.vY + heroSize - heroBottomMargin;
-	return heroRect;
+bool isOutOfMap(double x, double y) { // returns whether the point specified is in the game scene
+	return x < 0.0 || x >= (double)mapWidth * unitSize || y < 0.0 || y >= (double)mapHeight * unitSize;
 }
 
-bool isOutOfMap(float x, float y) {
-	return x < 0.f || x >= mapWidth * heroSize * 1.f || y < 0.f || y >= mapHeight * heroSize * 1.f;
-}
-
-bool isOutOfMap(D2D1_RECT_F rect) {
+bool isOutOfMap(rectReal rect) { // returns whether the rectangle is not completely contained in the game scene or not
 	return isOutOfMap(rect.left, rect.top) || isOutOfMap(rect.left, rect.bottom) ||
 		isOutOfMap(rect.right, rect.top) || isOutOfMap(rect.right, rect.bottom);
 }
 
-bool isOutOfMap(pointVector point) {
+bool isOutOfMap(pointVector point) { // overloading of isOutOfMap(x, y)
 	return isOutOfMap(point.vX, point.vY);
 }
 
-bool isOutOfMap() {
-	return isOutOfMap(makeRectF(hero.position.vX + heroSideMargin, hero.position.vY + heroTopMargin, hero.position.vX + heroSize - heroSideMargin, hero.position.vY + heroSize - heroBottomMargin));
-}
-
-bool isWall(float x, float y) {
+bool isWall(double x, double y) { // returns whether the point specified is a wall block
 	gameStage &game = gameStages[currentStage];
-	return game.blocks[(int)(x / heroSize)][(int)(y / heroSize)] == blockWall;
+	int boardX = (int)floor(x / unitSize), boardY = (int)floor(y / unitSize);
+	if (boardX < 0 || boardX >= mapWidth) return false;
+	if (boardY < 0 || boardY >= mapHeight) return false;
+	return game.blocks[boardX][boardY] == blockWall;
 }
 
-bool isWall(pointVector point) {
+bool isWall(pointVector point) { // overloading of isWall(x, y)
 	return isWall(point.vX, point.vY);
 }
 
-int xWall(pointVector position) {
-	float left = position.vX + heroSideMargin, right = position.vX + heroSize - heroSideMargin;
-	float top = position.vY + heroTopMargin, bottom = position.vY + heroSize - heroBottomMargin;
-	if (isWall(left - maxDelta, top) || isWall(left - maxDelta, bottom)) return -1;
-	if (isWall(right + maxDelta, top) || isWall(right + maxDelta, bottom)) return 1;
+int xWall(gameHero hero) { // decides if the hero hits a block on the left/right
+	rectReal heroRect = hero.rect();
+	if (isWall(heroRect.left - maxDelta, heroRect.top) || isWall(heroRect.left - maxDelta, heroRect.bottom)) return -1;
+	if (isWall(heroRect.right + maxDelta, heroRect.top) || isWall(heroRect.right + maxDelta, heroRect.bottom)) return 1;
 	return 0;
 }
 
-int yWall(pointVector position) {
-	float left = position.vX + heroSideMargin, right = position.vX + heroSize - heroSideMargin;
-	float top = position.vY + heroTopMargin, bottom = position.vY + heroSize - heroBottomMargin;
-	if (isWall(left, top - maxDelta) || isWall(left, bottom - maxDelta)) return -1;
-	if (isWall(right, top + maxDelta) || isWall(right, bottom + maxDelta)) return 1;
+int yWall(gameHero hero) { // decides if the hero hits a block on the top/bottom
+	rectReal heroRect = hero.rect();
+	if (isWall(heroRect.left, heroRect.top - maxDelta) || isWall(heroRect.left, heroRect.bottom - maxDelta)) return -1;
+	if (isWall(heroRect.right, heroRect.top + maxDelta) || isWall(heroRect.right, heroRect.bottom + maxDelta)) return 1;
 	return 0;
 }
 
-void updateHero() {
+void updateHero() { // update hero data (position, velocity, ...)
 	if (currentStage < stageTutorial) return;
 	static UINT lastTime = timeGetTime();
 	UINT thisTime = timeGetTime();
 	if (thisTime == lastTime) return;
-	float interval = (thisTime - lastTime) / 1000.0f;
+	double interval = (thisTime - lastTime) / 1000.0;
 	lastTime = thisTime;
-//	pointVector newVelocity = heroVelocity + gravityAcceleration * interval;
-	//pointVector acceleration;
+	
+	pointVector deltaVelocity(0.0, 0.0);
+
 	if (hero.face == directionRight) {
 		if (isKeyDown[VK_RIGHT]) {
-			//		newVelocity += interval * moveAcceleration;
-			//newVelocity.vX = maxVelocity.vX;
-			//hero.move(pointVector(maxVelocity.vX, ), interval);
-			//acceleration.vX = maxVelocity.vX;
-			if (!isWall(hero.position.vX + heroSize - heroSideMargin + maxDelta, hero.position.vY)) {
-			//	hero.velocity.vX = maxVelocity.vX;
+			if (!isWall(hero.right() + maxDelta, hero.top()) && !isWall(hero.right() + maxDelta, hero.bottom())) {
 				hero.lockX = false;
-			//	hero.move(pointVector(0.f, 0.f), interval);
-				hero.move(moveAcceleration, interval);
+				deltaVelocity += moveAcceleration;
 			}
 		} else {
-			//newVelocity.vX = 0.f;
-			hero.velocity.vX = 0.f;
-			//		newVelocity -= interval * moveAcceleration;
-			//		newVelocity.vX = maxValue(0.f, newVelocity.vX);
+			deltaVelocity -= moveAcceleration;
 		}
 	} else {
 		if (isKeyDown[VK_LEFT]) {
-			//		newVelocity -= interval * moveAcceleration;
-		//	newVelocity.vX = minVelocity.vX;
-			if (!isWall(hero.position.vX + heroSideMargin - maxDelta, hero.position.vY)) {
-				//hero.velocity.vX = minVelocity.vX;
+			if (!isWall(hero.left() - maxDelta, hero.top()) && !isWall(hero.left() - maxDelta, hero.bottom())) {
 				hero.lockX = false;
-				//hero.move(pointVector(0.f, 0.f), interval);
-				hero.move(-moveAcceleration, interval);
+				deltaVelocity -= moveAcceleration;
 			}
 		} else {
-			//newVelocity.vX = 0.f;
-			hero.velocity.vX = 0.f;
-			//		newVelocity += interval * moveAcceleration;
-			//		newVelocity.vX = minValue(0.f, newVelocity.vX);
+			deltaVelocity += moveAcceleration;
 		}
 	}
-	if (!yWall(hero.position + pointVector(0.f, maxDelta)) && !isOutOfMap(hero.position + pointVector(0.f, heroSize - heroBottomMargin + maxDelta))) hero.lockY = false;
-	if (!hero.lockY) hero.move(gravityAcceleration, interval);
-//	if (xWall(heroPosition) * dcmp(newVelocity.vX) == 1) heroVelocity.vX = newVelocity.vX = 0;
-//	if (yWall(heroPosition) * dcmp(newVelocity.vY) == 1) heroVelocity.vY = newVelocity.vY = 0;
-//	limitVelocity(newVelocity);
-//	pointVector newPosition = heroPosition + (newVelocity + heroVelocity) / 2.f * interval;
-//	heroPositionAdjust(newPosition, newVelocity);
-//	heroVelocity = newVelocity;
-//	heroPosition = newPosition;
+	if (isKeyDown[jumpKey] && thisTime - lastJumpTime < maxJumpTime) {
+		// The jump key is pressed down and it is still jumping
+		hero.lockY = false;
+		deltaVelocity += jumpAcceleration;
+	}
+	if ((!isWall(hero.left(), hero.bottom() + maxDelta) && !isWall(hero.right(), hero.bottom() + maxDelta)) && !isOutOfMap(hero.left(), hero.bottom() + maxDelta)) hero.lockY = false; // if the hero is not standing on a block, and the hero is not on the bottom of the scene, then release it in direction y
+	deltaVelocity += gravityAcceleration;
+	hero.move(deltaVelocity, interval);
 	heroPositionAdjust(hero);
-//	if (hero.lockX) printf("X locked\n");
-//	if (hero.lockY) printf("Y locked\n");
 }
 
 int heroPositionAdjust(gameHero &hero) {
@@ -162,180 +134,125 @@ int heroPositionAdjust(gameHero &hero) {
 	// Return value shows additional info (reserved for more usage).
 	gameStage &game = gameStages[currentStage];
 	int ret = 0;
-//	for (int j = (int)floor(hero.position.vY / heroSize); j < mapHeight && j <= (int)ceil(hero.position.vY / heroSize); ++j) {
-	//	for (int i = (int)floor(hero.position.vX / heroSize); i < mapWidth && i <= (int)ceil(hero.position.vX / heroSize); ++i) {
-	for (int j = 0; j < mapHeight; ++j) {
-		for (int i = 0; i < mapWidth; ++i) {
-			// We only need to check the squares the hero involves (no more than 4)
+	for (int j = std::max(0, (int)floor(hero.top() / unitSize)); j <= std::min(mapHeight - 1, (int)ceil(hero.bottom() / unitSize)); ++j) {
+		for (int i = std::max(0, (int)floor(hero.left() / unitSize)); i <= std::min(mapWidth - 1, (int)ceil(hero.right() / unitSize)); ++i) {
+			// We only need to check the squares the hero touches
 			switch (game.blocks[i][j]) {
 				case blockStartingPoint: case blockCheckpoint: case blockEmpty:
 				{
 					continue;
 				}
 			}
-			D2D1_RECT_F wallRect, heroRect;
-			wallRect.left = (float)i * heroSize, wallRect.right = (i + 1.f) * heroSize;
-			wallRect.top = (float)j * heroSize, wallRect.bottom = (j + 1.f) * heroSize;
-			heroRect.left = hero.position.vX + heroSideMargin, heroRect.right = hero.position.vX + heroSize - heroSideMargin;
-			heroRect.top = hero.position.vY + heroTopMargin, heroRect.bottom = hero.position.vY + heroSize - heroBottomMargin;
-			//if (!isRectIntersect((int)position.vX + heroSideMargin, (int)position.vY + heroTopMargin, (int)position.vX + heroSize - heroSideMargin, (int)position.vY + heroSize - heroBottomMargin, i * heroSize, j * heroSize, (i + 1) * heroSize, (j + 1) * heroSize)) continue;
-			/*if (!isRectIntersect(heroRect.left, heroRect.top, heroRect.right, heroRect.bottom, wallRect.left, wallRect.top, wallRect.right, wallRect.bottom)) continue;*/
+			rectReal wallRect, heroRect;
+			wallRect.left = (double)i * unitSize, wallRect.right = (i + 1.0) * unitSize;
+			wallRect.top = (double)j * unitSize, wallRect.bottom = (j + 1.0) * unitSize;
+			heroRect = hero.rect();
 			if (!isRectIntersect(heroRect, wallRect)) continue;
-
-		//	printf("Crashed into a wall ");
-			
-		//	pointVector squareCenter(i * heroSize + heroSize / 2, j * heroSize + (heroSize + heroTopMargin - heroBottomMargin) / 2);
-			//pointVector delta = hero.position - pointVector((float)i * heroSize, (float)j * heroSize);
 			pointVector delta = rectCenter(heroRect) - rectCenter(wallRect);
-			// Adjustment is based on integer coordinates, for stronger robustness and better experience.
 			if (dcmp(abs(delta.vX), abs(delta.vY)) >= 0) {
 				// Crashed in x-axis. Fix in x-coordinate.
-			/*	if (isInInterval((int)position.vX + heroSideMargin, i * heroSize + heroSize / 2, (i + 1) * heroSize))
-					position.vX = (i + 1.f) * heroSize - heroSideMargin + 1, velocity.vX = 0.f, ret = 1;
-				if (isInInterval((int)ceil(position.vX) + heroSize - heroSideMargin, i * heroSize, i * heroSize + heroSize / 2))
-					position.vX = (i - 1.f) * heroSize + heroSideMargin - 1, velocity.vX = 0.f, ret = 1;
-				//	break;*/
 				ret |= heroFixLeft(hero, wallRect);
 				ret |= heroFixRight(hero, wallRect);
-			//	printf("Crashed X ");
 			}
 			if (dcmp(abs(delta.vX), abs(delta.vY)) <= 0) {
 				// Crashed in y-axis. Fix in y-coordinate.
-			/*	if (isInInterval((int)position.vY + heroTopMargin, j * heroSize + heroSize / 2, (j + 1) * heroSize))
-					position.vY = (j + 1.f) * heroSize - heroTopMargin + 1, velocity.vY = 0.f, ret = 1;
-				if (isInInterval((int)ceil(position.vY) + heroSize - heroBottomMargin, j * heroSize, j * heroSize + heroSize / 2))
-					position.vY = (j - 1.f) * heroSize + heroBottomMargin - 1, velocity.vY = 0.f, ret = 1, hero.jumpCount = 0;
-				//	break;*/
 				ret |= heroFixTop(hero, wallRect);
 				ret |= heroFixBottom(hero, wallRect);
-		//		printf("Crashed Y ");
 			}
-			//if (ret) break;
-		/*	if (isIntervalIntersect(heroRect.left, heroRect.right, wallRect.left, wallRect.right)) {
-				ret |= heroFixTop(hero, wallRect);
-				ret |= heroFixBottom(hero, wallRect);
-				printf("Crashed Y ");
-			}
-			heroRect = getHeroRect(hero);
-			if (isIntervalIntersect(heroRect.top, heroRect.bottom, wallRect.top, wallRect.bottom)) {
-				ret |= heroFixLeft(hero, wallRect);
-				ret |= heroFixRight(hero, wallRect);
-				printf("Crashed X ");
-			}*/
 		}
-		//if (ret) break;
 	}
-	if (hero.position.vX < -heroSideMargin * 1.f) { // x-position fix into the game area
+	if (hero.position.vX < -heroSideMargin * 1.0) { // x-position fix into the game area
 		hero.position.vX = -heroSideMargin;
-		hero.velocity.vX = 0.f;
+		hero.velocity.vX = 0.0;
 		hero.lockX = true;
 		ret = 1;
-	} else if (hero.position.vX > (mapWidth - 1.f) * heroSize + heroSideMargin) {
-		hero.position.vX = (mapWidth - 1.f) * heroSize + heroSideMargin;
-		hero.velocity.vX = 0.f;
+	} else if (hero.position.vX > mapWidth * unitSize - heroSize + heroSideMargin) {
+		hero.position.vX = mapWidth * unitSize - heroSize + heroSideMargin;
+		hero.velocity.vX = 0.0;
 		hero.lockX = true;
 		ret = 1;
 	}
-	if (hero.position.vY < -heroTopMargin * 1.f) { // y-position fix into the game area
+	if (hero.position.vY < -heroTopMargin * 1.0) { // y-position fix into the game area
 		hero.position.vY = -heroTopMargin;
-		hero.velocity.vY = 0.f;
+		hero.velocity.vY = 0.0;
 		hero.lockY = true;
 		ret = 1;
-	} else if (hero.position.vY > (mapHeight - 1.f) * heroSize + heroBottomMargin) {
-		hero.position.vY = (mapHeight - 1.f) * heroSize + heroBottomMargin;
-		hero.velocity.vY = 0.f;
+	} else if (hero.position.vY > mapHeight * unitSize - heroSize + heroBottomMargin) {
+		hero.position.vY = mapHeight * unitSize - heroSize + heroBottomMargin;
+		hero.velocity.vY = 0.0;
 		hero.lockY = true;
 		hero.jumpCount = 0;
 		ret = 1;
 	}
-	//printf("Position-Y = %0.3lf, Velocity-Y = %0.3lf\n", hero.position.vY, hero.velocity.vY);
-	printf("pos: (%0.2lf, %0.2lf), vel: (%0.2lf, %0.2lf) X: %s, Y: %s\n", hero.position.vX, hero.position.vY, hero.velocity.vX, hero.velocity.vY, hero.lockX ? "locked" : "free", hero.lockY ? "locked" : "free");
-	//if (!ret) hero.lockX = hero.lockY = false;
 	return ret;
 }
 
-int heroFixTop(gameHero &hero, D2D1_RECT_F object) {
+int heroFixTop(gameHero &hero, rectReal object) {
 	// Fix the hero's position so that it stands on an object
-	D2D1_RECT_F heroRect;
-	heroRect.top = hero.position.vY + heroTopMargin;
-	heroRect.bottom = hero.position.vY + heroSize - heroBottomMargin;
-	//if (heroRect.bottom >= object.top && heroRect.top + heroSize / 2) {
-	if (isInInterval(heroRect.bottom, object.top, object.top + heroSize / 2.f)) {
+	if (isInInterval(hero.bottom(), object.top, object.top + unitSize / 2.0)) {
 		hero.position.vY = object.top + heroBottomMargin - heroSize - minDelta;
 		hero.lockY = true;
-		hero.velocity.vY = 0.f;
+		hero.velocity.vY = 0.0;
 		hero.jumpCount = 0;
 		return 1;
 	}
 	return 0;
 }
 
-int heroFixBottom(gameHero &hero, D2D1_RECT_F object) {
+int heroFixBottom(gameHero &hero, rectReal object) {
 	// Fix the hero's position so that it is exactly below the object
-	D2D1_RECT_F heroRect;
-	heroRect.top = hero.position.vY + heroTopMargin;
-	heroRect.bottom = hero.position.vY + heroSize - heroBottomMargin;
-	//if (heroRect.top <= object.bottom - heroSize / 2) {
-	if (isInInterval(heroRect.top, object.bottom - heroSize / 2.f, object.bottom)) {
+	if (isInInterval(hero.top(), object.bottom - unitSize / 2.0, object.bottom)) {
 		hero.position.vY = object.bottom - heroTopMargin + minDelta;
 		hero.lockY = true;
-		hero.velocity.vY = 0.f;
+		hero.velocity.vY = 0.0;
 		return 1;
 	}
 	return 0;
 }
 
-int heroFixLeft(gameHero &hero, D2D1_RECT_F object) {
+int heroFixLeft(gameHero &hero, rectReal object) {
 	// Fix the hero's position so that it is exactly on the left of the object
-	D2D1_RECT_F heroRect;
-	heroRect.left = hero.position.vX + heroSideMargin;
-	heroRect.right = hero.position.vX + heroSize - heroSideMargin;
-	//if (heroRect.right >= object.left + heroSize / 2) {
-	if (isInInterval(heroRect.right, object.left, object.left + heroSize / 2.f)) {
+	if (isInInterval(hero.right(), object.left, object.left + unitSize / 2.0)) {
 		hero.position.vX = object.left + heroSideMargin - heroSize - minDelta;
 		hero.lockX = true;
-		hero.velocity.vX = 0.f;
+		hero.velocity.vX = 0.0;
 		return 1;
 	}
 	return 0;
 }
 
-int heroFixRight(gameHero &hero, D2D1_RECT_F object) {
+int heroFixRight(gameHero &hero, rectReal object) {
 	// Fix the hero's position so that it is exactly below the object
-	D2D1_RECT_F heroRect;
-	heroRect.left = hero.position.vX + heroSideMargin;
-	heroRect.right = hero.position.vX + heroSize - heroSideMargin;
-	//if (heroRect.left <= object.right - heroSize / 2) {
-	if (isInInterval(heroRect.left, object.right - heroSize / 2.f, object.right)) {
+	if (isInInterval(hero.left(), object.right - unitSize / 2.0, object.right)) {
 		hero.position.vX = object.right - heroSideMargin + minDelta;
 		hero.lockX = true;
-		hero.velocity.vX = 0.f;
+		hero.velocity.vX = 0.0;
 		return 1;
 	}
 	return 0;
 }
 
 int getHeroState(pointVector velocity) {
-	int index = timeGetTime() % 500 / 125;
+	// Calculate which picture to draw
+	int index = timeGetTime() % 500 / 125; // Each frame lasts 125 ms, and each set contains 4 pictures
 	switch (dcmp(velocity.vY)) {
-		case 1:
+		case 1: // v_y>0: falling
 		{
-			return (hero.face == directionLeft ? heroLeft : heroRight) + heroFalling + (index % 2);
+			return (hero.face == directionLeft ? heroLeft : heroRight) + heroFalling + (index % 2); // we only have 2 graphs for falling
 			break;
 		}
-		case -1:
+		case -1: // v_y<0: jumping
 		{
-			return (hero.face == directionLeft ? heroLeft : heroRight) + heroJumping + (index % 2);
+			return (hero.face == directionLeft ? heroLeft : heroRight) + heroJumping + (index % 2); // we only have 2 graphs for jumping
 			break;
 		}
-		case 0:
+		case 0: // v_y=0: walking or standing/slipping (these two states share the same set of pictures)
 		{
-			int ans = (hero.face == directionLeft ? heroLeft : heroRight);
-			if (!isKeyDown[VK_LEFT] && !isKeyDown[VK_RIGHT]) ans += heroStanding;
-			else if ((isKeyDown[VK_LEFT] && velocity.vX < 0.f) || (isKeyDown[VK_RIGHT] && velocity.vX >= 0.f))
-				ans += heroWalking;
+			int ans = (hero.face == directionLeft ? heroLeft : heroRight); // the direction
+			if (!isKeyDown[VK_LEFT] && !isKeyDown[VK_RIGHT]) ans += heroStanding; // standing/slipping
+			else if ((isKeyDown[VK_LEFT] && velocity.vX < 0.0) || (isKeyDown[VK_RIGHT] && velocity.vX >= 0.0))
+				ans += heroWalking; // walking
 			ans += index;
-			//	debugPrintF("%d\n", idx % 4);
 			return ans;
 		}
 		default:
@@ -347,27 +264,27 @@ int getHeroState(pointVector velocity) {
 
 void renderGame() {
 	gameStage &game = gameStages[currentStage];
-	renderTarget->DrawBitmap(game.bkgImage, makeRectF(0.f, 0.f, windowClientWidth * 1.f, windowClientHeight * 1.f));
+	mainRenderer->DrawBitmap(game.bkgImage, makeRectF(0.0, 0.0, windowClientWidth * 1.0, windowClientHeight * 1.0));
 	for (int i = 0; i < mapWidth; ++i) for (int j = 0; j < mapHeight; ++j) {
 		switch (game.blocks[i][j]) {
 			case blockWall:
 			{
-				renderTarget->DrawBitmap(wallImage, makeRectF(1.f * i * heroSize, 1.f * j * heroSize, (i + 1.f) * heroSize, (j + 1.f) * heroSize));
+				mainRenderer->DrawBitmap(wallImage, makeRectF((float)i * unitSize, (float)j * unitSize, float(i + 1) * unitSize, float(j + 1) * unitSize));
 				break;
 			}
 		}
 		int heroStyle = getHeroState(hero.velocity);
-		renderTarget->DrawBitmap(heroImage, makeRectF(hero.position.vX, hero.position.vY, hero.position.vX + heroSize, hero.position.vY + heroSize), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF(1.f * heroStyle * heroSize, 0.f, (heroStyle + 1.f) * heroSize, 1.f * heroSize));
+		mainRenderer->DrawBitmap(heroImage, makeRectF((float)hero.position.vX, (float)hero.position.vY, (float)(hero.position.vX + heroSize), (float)(hero.position.vY + heroSize)), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF(float(heroStyle * heroSize), 0.f, float((heroStyle + 1) * heroSize), (float)heroSize));
 
-		renderTarget->DrawRectangle(makeRectF(hero.position.vX + heroSideMargin, hero.position.vY + heroTopMargin, hero.position.vX + heroSize - heroSideMargin, hero.position.vY + heroSize - heroBottomMargin), brushBlack);
+		mainRenderer->DrawRectangle(makeRectF((float)hero.left(), (float)hero.top(), (float)hero.right(), (float)hero.bottom()), brushBlack);
 	}
 }
 
 XplorerResult gameStage::loadFromFile(const WCHAR *fileName) {
 	WCHAR backgroundImage[bufferSize];
-	FILE *file = NULL;
+	FILE *file = nullptr;
 	_wfopen_s(&file, fileName, L"r");
-	if (file == NULL) {
+	if (file == nullptr) {
 		n = mapHeight, m = mapWidth;
 		return XplorerResult::fileNotFound;
 	}
@@ -382,18 +299,25 @@ XplorerResult gameStage::loadFromFile(const WCHAR *fileName) {
 				return XplorerResult::fileBroken;
 			}
 			if (blocks[j][i] == blockStartingPoint) {
-				initialPosition.vX = 1.f * j * heroSize;
-				initialPosition.vY = 1.f * i * heroSize;
+				initialPosition.vX = (double)j * unitSize;
+				initialPosition.vY = (double)i * unitSize;
 			}
 		}
 		fwscanf_s(file, L"%ls", backgroundImage, bufferSize);
 		fclose(file);
 		safeRelease(bkgImage);
-		loadBitmapFromFile(renderTarget, imageFactory, backgroundImage, windowClientWidth, windowClientHeight, &bkgImage);
+		loadBitmapFromFile(mainRenderer, imageFactory, backgroundImage, windowClientWidth, windowClientHeight, &bkgImage);
 	} else {
 		fclose(file);
 		return XplorerResult::fileBroken;
 	}
+	return XplorerResult::okay;
+}
+
+XplorerResult gameStage::loadFromJSON(const WCHAR *fileName) {
+	std::ifstream fin(fileName);
+	fin >> gameData;
+	fin.close();
 	return XplorerResult::okay;
 }
 
@@ -403,27 +327,35 @@ gameStage::~gameStage() {
 
 void newStage(int stageID) {
 	currentStage = stageID;
-	hero.velocity = pointVector(0.f, 0.f);
+	hero.velocity = pointVector(0.0, 0.0);
 	hero.position = gameStages[stageID].initialPosition;
 	hero.face = directionRight;
 	hero.jumpCount = 0;
 	hero.lockX = hero.lockY = false;
 }
 
-void gameHero::move(pointVector dV, float dT) {
+void gameHero::move(pointVector dV, double dT) {
 	pointVector newV = velocity + dV * dT;
 	limitVelocity(newV);
-	if (lockX) velocity.vX = 0.f;
+	if (face == directionLeft && !isKeyDown[VK_LEFT]) newV.vX = std::min(newV.vX, 0.0);
+	if (face == directionRight && !isKeyDown[VK_RIGHT]) newV.vX = std::max(newV.vX, 0.0);
+	if (lockX) velocity.vX = 0.0;
 	else {
-		float vX = (velocity.vX + newV.vX) / 2.f;
+		double vX = (velocity.vX + newV.vX) / 2.0;
 		position.vX += vX * dT;
-		if (dcmp(velocity.vX * newV.vX) == -1) face = (face == directionLeft ? directionRight : directionLeft);
 		velocity.vX = newV.vX;
 	}
-	if (lockY) velocity.vY = 0.f;
+	if (lockY) velocity.vY = 0.0;
 	else {
-		float vY = (velocity.vY + newV.vY) / 2.f;
+		double vY = (velocity.vY + newV.vY) / 2.0;
 		position.vY += vY * dT;
 		velocity.vY = newV.vY;
 	}
 }
+
+double gameHero::left() { return hero.position.vX + heroSideMargin; }
+double gameHero::right() { return hero.position.vX + heroSize - heroSideMargin; }
+double gameHero::top() { return hero.position.vY + heroTopMargin; }
+double gameHero::bottom() { return hero.position.vY + heroSize - heroBottomMargin; }
+
+rectReal gameHero::rect() { return makeRectR(left(), top(), right(), bottom()); }

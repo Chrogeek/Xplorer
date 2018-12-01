@@ -22,38 +22,34 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "defs.h"
 #include <d2d1.h>
 #include <dwrite.h>
 #include <map>
 #include <vector>
-#include "defs.h"
 #include "game.h"
 #include "utility.h"
 #include <windows.h>
 #include <wincodec.h>
-using namespace std;
 
 int currentStage;
 
 buttonUI *buttons[maxButton + 1];
 gameStage gameStages[maxStage + 1];
 
-ID2D1Factory *d2dFactory = NULL;
-IWICImagingFactory *imageFactory = NULL;
-IDWriteFactory *writeFactory = NULL;
-IDWriteTextFormat *textFormatNormal = NULL;
-ID2D1DCRenderTarget *renderTarget = NULL;
-ID2D1Bitmap *bkgImage = NULL, *wallImage = NULL, *heroImage = NULL;
-ID2D1Bitmap *bitmapBackground = NULL;
-ID2D1SolidColorBrush *brushBlack = NULL;
+ID2D1Factory *d2dFactory = nullptr;
+IWICImagingFactory *imageFactory = nullptr;
+IDWriteFactory *writeFactory = nullptr;
+IDWriteTextFormat *textFormatNormal = nullptr;
+ID2D1DCRenderTarget *mainRenderer = nullptr;
+ID2D1Bitmap *bkgImage = nullptr, *wallImage = nullptr, *heroImage = nullptr;
+ID2D1Bitmap *bitmapBackground = nullptr;
+ID2D1SolidColorBrush *brushBlack = nullptr;
+
+ID2D1BitmapRenderTarget *mainFrame = nullptr;
 
 float dpiX, dpiY;
 
-//int heroDirection;
-//int jumpCount;
-//float heroVelocityY;
-//float heroX, heroY;
-//pointVector heroPosition, heroVelocity;
-//XplorerDirection face;
 gameHero hero;
 bool isKeyDown[128];
+UINT lastJumpTime;
