@@ -29,9 +29,11 @@
 #include "game.h"
 #include "handler.h"
 #include "utility.h"
+#include "gameLevel.h"
 
-extern gameStage gameStages[maxStage + 1];
-extern int currentStage;
+//extern gameStage gameStages[maxStage + 1];
+//extern int currentStage;
+extern int currentChapter, currentLevel;
 extern ID2D1Factory *d2dFactory;
 extern ID2D1DCRenderTarget *mainRenderer;
 extern IWICImagingFactory *imageFactory;
@@ -42,8 +44,10 @@ extern bool isKeyDown[128];
 extern gameHero hero;
 extern UINT lastJumpTime;
 
+extern gameManager gameMaster;
+
 void gameTimer(HWND hwnd, UINT timerID) {
-	if (currentStage >= stageTutorial) {
+	if (currentChapter >= stageTutorial) {
 		updateHero();
 	}
 	InvalidateRect(hwnd, nullptr, false);
@@ -51,14 +55,15 @@ void gameTimer(HWND hwnd, UINT timerID) {
 }
 
 void initializeGame() {
-	gameStages[1].loadFromFile(L"levels/1.txt");
-	currentStage = stageMainMenu;
+//	gameStages[1].loadFromFile(L"levels/1.txt");
+	currentChapter = stageMainMenu;
+	gameMaster.load("./chapters");
 }
 
 void gameKeyDown(HWND hwnd, int keyCode) {
 	if (!isInInterval(keyCode, 0, 128)) return;
 	isKeyDown[keyCode] = true;
-	if (currentStage >= stageTutorial) {
+	if (currentChapter >= stageTutorial) {
 		if (keyCode == VK_LEFT) hero.face = directionLeft, hero.lockX = false;
 		else if (keyCode == VK_RIGHT) hero.face = directionRight, hero.lockX = false;
 		else if (keyCode == jumpKey) {
@@ -82,14 +87,14 @@ void gameMouseDown(HWND hwnd, int button, int X, int Y) {}
 
 void gameMouseUp(HWND hwnd, int button, int X, int Y) {
 	int buttonClicked = getClickedButtonID((double)X, (double)Y);
-	switch (currentStage) {
+	switch (currentChapter) {
 		case stageMainMenu:
 		{
 			if (buttonClicked == buttonExit) {
 				PostQuitMessage(0);
 			} else if (buttonClicked == buttonStart) {
 				disableAllButtons();
-				newStage(1);
+				startLevel(0, 0);
 			}
 			break;
 		}
@@ -104,25 +109,27 @@ void gameMouseMove(HWND hwnd, int button, int X, int Y) {}
 
 void renderWindow(HWND hwnd) {
 	if (mainRenderer == nullptr) return;
-	switch (currentStage) {
+
+	mainRenderer->BeginDraw();
+
+	mainRenderer->Clear();
+	switch (currentChapter) {
 		case stageMainMenu:
 		{
-			mainRenderer->BeginDraw();
 			mainRenderer->DrawBitmap(bitmapBackground, makeRectF(0, 0, windowClientWidth, windowClientHeight));
 			buttonUI *btnStart = buttons[buttonStart], *btnExit = buttons[buttonExit];
 			if (btnStart) btnStart->visible = true;
 			if (btnExit) btnExit->visible = true;
 			drawButton(btnStart);
 			drawButton(btnExit);
-			mainRenderer->EndDraw();
 			break;
 		}
 		default:
 		{
-			mainRenderer->BeginDraw();
 			renderGame();
-			mainRenderer->EndDraw();
 			break;
 		}
 	}
+
+	mainRenderer->EndDraw();
 }

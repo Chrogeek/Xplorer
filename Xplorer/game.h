@@ -38,7 +38,7 @@ void renderGame();
 void updateHero();
 void renderGame();
 
-struct gameStage {
+/*struct gameStage {
 	ID2D1Bitmap *bkgImage;
 	int n, m, blocks[mapWidth][mapHeight];
 	XplorerResult loadFromFile(const WCHAR *);
@@ -46,9 +46,10 @@ struct gameStage {
 	pointVector initialPosition;
 	json gameData;
 	~gameStage();
-};
+};*/
 
-void newStage(int);
+//void newStage(int);
+void startLevel(int, int);
 
 struct gameHero {
 	pointVector position, velocity;

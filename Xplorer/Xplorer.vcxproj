@@ -135,6 +135,7 @@
     <ClInclude Include="gameLevel.h" />
     <ClInclude Include="geometry.h" />
     <ClInclude Include="handler.h" />
+    <ClInclude Include="json.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>

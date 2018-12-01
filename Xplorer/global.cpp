@@ -23,19 +23,21 @@
 */
 
 #include "defs.h"
-#include <d2d1.h>
-#include <dwrite.h>
 #include <map>
 #include <vector>
-#include "game.h"
-#include "utility.h"
+#include <d2d1.h>
+#include <dwrite.h>
 #include <windows.h>
 #include <wincodec.h>
+#include "game.h"
+#include "utility.h"
+#include "gameLevel.h"
 
-int currentStage;
+//int currentStage;
+int currentChapter, currentLevel;
 
 buttonUI *buttons[maxButton + 1];
-gameStage gameStages[maxStage + 1];
+//gameStage gameStages[maxStage + 1];
 
 ID2D1Factory *d2dFactory = nullptr;
 IWICImagingFactory *imageFactory = nullptr;
@@ -53,3 +55,5 @@ float dpiX, dpiY;
 gameHero hero;
 bool isKeyDown[128];
 UINT lastJumpTime;
+
+gameManager gameMaster;

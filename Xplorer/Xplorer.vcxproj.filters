@@ -59,6 +59,9 @@
     <ClInclude Include="gameLevel.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="json.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Xplorer.rc">

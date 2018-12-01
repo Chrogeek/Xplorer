@@ -32,13 +32,16 @@
 #include "json.h"
 #include "game.h"
 #include "utility.h"
+#include "gameLevel.h"
 
 extern bool isKeyDown[128];
-extern int currentStage;
+//extern int currentStage;
 extern UINT lastJumpTime;
+extern int currentChapter, currentLevel;
 
 extern ID2D1Bitmap *wallImage, *heroImage;
-extern gameStage gameStages[maxStage + 1];
+//extern gameStage gameStages[maxStage + 1];
+extern gameManager gameMaster;
 
 extern gameHero hero;
 
@@ -51,7 +54,8 @@ extern ID2D1SolidColorBrush *brushBlack;
 using json = nlohmann::json;
 
 bool isOutOfMap(double x, double y) { // returns whether the point specified is in the game scene
-	return x < 0.0 || x >= (double)mapWidth * unitSize || y < 0.0 || y >= (double)mapHeight * unitSize;
+	gameLevel &game = gameMaster.chapters[currentChapter].levels[currentLevel];
+	return x < 0.0 || x >= (double)game.columns * unitSize || y < 0.0 || y >= (double)game.rows * unitSize;
 }
 
 bool isOutOfMap(rectReal rect) { // returns whether the rectangle is not completely contained in the game scene or not
@@ -64,11 +68,12 @@ bool isOutOfMap(pointVector point) { // overloading of isOutOfMap(x, y)
 }
 
 bool isWall(double x, double y) { // returns whether the point specified is a wall block
-	gameStage &game = gameStages[currentStage];
+//	gameStage &game = gameStages[currentStage];
+	gameLevel &game = gameMaster.chapters[currentChapter].levels[currentLevel];
 	int boardX = (int)floor(x / unitSize), boardY = (int)floor(y / unitSize);
-	if (boardX < 0 || boardX >= mapWidth) return false;
-	if (boardY < 0 || boardY >= mapHeight) return false;
-	return game.blocks[boardX][boardY] == blockWall;
+	if (boardX < 0 || boardX >= game.columns) return false;
+	if (boardY < 0 || boardY >= game.rows) return false;
+	return game.grid[boardX][boardY] == blockWall;
 }
 
 bool isWall(pointVector point) { // overloading of isWall(x, y)
@@ -90,7 +95,8 @@ int yWall(gameHero hero) { // decides if the hero hits a block on the top/bottom
 }
 
 void updateHero() { // update hero data (position, velocity, ...)
-	if (currentStage < stageTutorial) return;
+//	if (currentStage < stageTutorial) return;
+	if (currentChapter < stageTutorial) return;
 	static UINT lastTime = timeGetTime();
 	UINT thisTime = timeGetTime();
 	if (thisTime == lastTime) return;
@@ -132,12 +138,13 @@ void updateHero() { // update hero data (position, velocity, ...)
 int heroPositionAdjust(gameHero &hero) {
 	// Fix the hero's position with the map data. (Collision detection & adjustment)
 	// Return value shows additional info (reserved for more usage).
-	gameStage &game = gameStages[currentStage];
+//	gameStage &game = gameStages[currentStage];
+	gameLevel &game = gameMaster.chapters[currentChapter].levels[currentLevel];
 	int ret = 0;
-	for (int j = std::max(0, (int)floor(hero.top() / unitSize)); j <= std::min(mapHeight - 1, (int)ceil(hero.bottom() / unitSize)); ++j) {
-		for (int i = std::max(0, (int)floor(hero.left() / unitSize)); i <= std::min(mapWidth - 1, (int)ceil(hero.right() / unitSize)); ++i) {
+	for (int j = std::max(0, (int)floor(hero.top() / unitSize)); j <= std::min(game.rows - 1, (int)ceil(hero.bottom() / unitSize)); ++j) {
+		for (int i = std::max(0, (int)floor(hero.left() / unitSize)); i <= std::min(game.columns - 1, (int)ceil(hero.right() / unitSize)); ++i) {
 			// We only need to check the squares the hero touches
-			switch (game.blocks[i][j]) {
+			switch (game.grid[i][j]) {
 				case blockStartingPoint: case blockCheckpoint: case blockEmpty:
 				{
 					continue;
@@ -166,8 +173,8 @@ int heroPositionAdjust(gameHero &hero) {
 		hero.velocity.vX = 0.0;
 		hero.lockX = true;
 		ret = 1;
-	} else if (hero.position.vX > mapWidth * unitSize - heroSize + heroSideMargin) {
-		hero.position.vX = mapWidth * unitSize - heroSize + heroSideMargin;
+	} else if (hero.position.vX > game.columns * unitSize - heroSize + heroSideMargin) {
+		hero.position.vX = game.columns * unitSize - heroSize + heroSideMargin;
 		hero.velocity.vX = 0.0;
 		hero.lockX = true;
 		ret = 1;
@@ -177,8 +184,8 @@ int heroPositionAdjust(gameHero &hero) {
 		hero.velocity.vY = 0.0;
 		hero.lockY = true;
 		ret = 1;
-	} else if (hero.position.vY > mapHeight * unitSize - heroSize + heroBottomMargin) {
-		hero.position.vY = mapHeight * unitSize - heroSize + heroBottomMargin;
+	} else if (hero.position.vY > game.rows * unitSize - heroSize + heroBottomMargin) {
+		hero.position.vY = game.rows * unitSize - heroSize + heroBottomMargin;
 		hero.velocity.vY = 0.0;
 		hero.lockY = true;
 		hero.jumpCount = 0;
@@ -263,23 +270,30 @@ int getHeroState(pointVector velocity) {
 }
 
 void renderGame() {
-	gameStage &game = gameStages[currentStage];
-	mainRenderer->DrawBitmap(game.bkgImage, makeRectF(0.0, 0.0, windowClientWidth * 1.0, windowClientHeight * 1.0));
-	for (int i = 0; i < mapWidth; ++i) for (int j = 0; j < mapHeight; ++j) {
-		switch (game.blocks[i][j]) {
+//	gameStage &game = gameStages[currentStage];
+	gameLevel &game = gameMaster.chapters[currentChapter].levels[currentLevel];
+
+	float renderLeft, renderTop;
+	renderLeft = std::max(0.f, std::min((float)hero.position.vX - windowClientWidth / 2.f, (float)game.columns * unitSize - windowClientWidth));
+	renderTop = std::max(0.f, std::min((float)hero.position.vY - windowClientHeight / 2.f, (float)game.rows * unitSize - windowClientHeight));
+
+	//mainRenderer->DrawBitmap(game.bitmap, makeRectF(0.0, 0.0, windowClientWidth * 1.0, windowClientHeight * 1.0));
+	mainRenderer->DrawBitmap(game.bitmap, makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF(renderLeft, renderTop, renderLeft + windowClientWidth, renderTop + windowClientHeight));
+	/*for (int i = 0; i < mapWidth; ++i) for (int j = 0; j < mapHeight; ++j) {
+		switch (game.grid[i][j]) {
 			case blockWall:
 			{
 				mainRenderer->DrawBitmap(wallImage, makeRectF((float)i * unitSize, (float)j * unitSize, float(i + 1) * unitSize, float(j + 1) * unitSize));
 				break;
 			}
 		}
-		int heroStyle = getHeroState(hero.velocity);
-		mainRenderer->DrawBitmap(heroImage, makeRectF((float)hero.position.vX, (float)hero.position.vY, (float)(hero.position.vX + heroSize), (float)(hero.position.vY + heroSize)), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF(float(heroStyle * heroSize), 0.f, float((heroStyle + 1) * heroSize), (float)heroSize));
+	}*/
+	int heroStyle = getHeroState(hero.velocity);
+	mainRenderer->DrawBitmap(heroImage, makeRectF((float)hero.position.vX - renderLeft, (float)hero.position.vY - renderTop, (float)(hero.position.vX + heroSize - renderLeft), (float)(hero.position.vY + heroSize - renderTop)), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF(float(heroStyle * heroSize), 0.f, float((heroStyle + 1) * heroSize), (float)heroSize));
 
-		mainRenderer->DrawRectangle(makeRectF((float)hero.left(), (float)hero.top(), (float)hero.right(), (float)hero.bottom()), brushBlack);
-	}
+	mainRenderer->DrawRectangle(makeRectF((float)hero.left() - renderLeft, (float)hero.top() - renderTop, (float)hero.right() - renderLeft, (float)hero.bottom() - renderTop), brushBlack);
 }
-
+/*
 XplorerResult gameStage::loadFromFile(const WCHAR *fileName) {
 	WCHAR backgroundImage[bufferSize];
 	FILE *file = nullptr;
@@ -329,6 +343,17 @@ void newStage(int stageID) {
 	currentStage = stageID;
 	hero.velocity = pointVector(0.0, 0.0);
 	hero.position = gameStages[stageID].initialPosition;
+	hero.face = directionRight;
+	hero.jumpCount = 0;
+	hero.lockX = hero.lockY = false;
+}*/
+
+void startLevel(int chapterID, int levelID) {
+	currentChapter = currentLevel = -1;
+	if (chapterID >= (int)gameMaster.chapters.size() || levelID >= (int)gameMaster.chapters[chapterID].levels.size()) return;
+	currentChapter = chapterID, currentLevel = levelID;
+	hero.velocity = pointVector(0.0, 0.0);
+	hero.position = gameMaster.chapters[currentChapter].levels[currentLevel].initialPosition;
 	hero.face = directionRight;
 	hero.jumpCount = 0;
 	hero.lockX = hero.lockY = false;

@@ -390,3 +390,10 @@ D2D1_SIZE_U makeSizeU(int width, int height) {
 	ans.height = height;
 	return ans;
 }
+
+D2D1_SIZE_F makeSizeF(float width, float height) {
+	D2D1_SIZE_F ans;
+	ans.width = width;
+	ans.height = height;
+	return ans;
+}

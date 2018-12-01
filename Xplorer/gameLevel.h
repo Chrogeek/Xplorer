@@ -7,6 +7,8 @@
 #include <d2d1.h>
 #include <windows.h>
 #include "json.h"
+#include "utility.h"
+#include "geometry.h"
 
 using json = nlohmann::json;
 
@@ -15,8 +17,10 @@ struct gameLevel {
 	int rows, columns;
 	std::vector<std::vector<int> > grid;
 	ID2D1BitmapRenderTarget *frame;
-	HDC hDC;
+	ID2D1Bitmap *bitmap;
 	XplorerResult load(std::string);
+	pointVector initialPosition;
+	~gameLevel();
 };
 
 struct gameChapter {

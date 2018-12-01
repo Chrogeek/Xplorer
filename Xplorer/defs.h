@@ -77,8 +77,8 @@ const double heroSideMargin = 9 * heroSizeMultiplier;
 const double heroTopMargin = 10 * heroSizeMultiplier;
 const double heroBottomMargin = 0 * heroSizeMultiplier;
 
-const int mapWidth = 28;
-const int mapHeight = 21;
+//const int mapWidth = 28;
+//const int mapHeight = 21;
 
 const int heroLeft = 12;
 const int heroRight = 0;
@@ -87,10 +87,20 @@ const int heroWalking = 4;
 const int heroFalling = 8;
 const int heroJumping = 10;
 
-const int blockEmpty = 0;
+/*const int blockEmpty = 0;
 const int blockWall = 1;
 const int blockStartingPoint = 2;
-const int blockCheckpoint = 3;
+const int blockCheckpoint = 3;*/
+
+const int blockEmpty = -1;
+const int blockNeedleUp = 2;
+const int blockNeedleDown = 3;
+const int blockNeedleRight = 4;
+const int blockNeedleLeft = 5;
+const int blockCheckpoint = 6;
+const int blockWormhole = 7;
+const int blockWall = 15;
+const int blockStartingPoint = 1;
 
 const int maxFPS = 80;
 const int timerInterval = int(1000.0 / maxFPS);

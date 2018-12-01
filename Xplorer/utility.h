@@ -90,6 +90,7 @@ rectFloat rectR2F(rectReal);
 rectReal rectF2R(rectFloat);
 
 D2D1_SIZE_U makeSizeU(int, int);
+D2D1_SIZE_F makeSizeF(float, float);
 
 int getClickedButtonID(double, double);
 
