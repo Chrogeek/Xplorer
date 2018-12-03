@@ -29,8 +29,14 @@
 #define NOMINMAX // disable visual c++'s default min/max macros
 
 #include <d2d1.h>
+#include "geometry.h"
 
 typedef D2D1_RECT_F rectFloat;
+
+typedef int gameResult;
+
+typedef void(*voidFunction)();
+typedef void(*voidBitmapPointDoubleFunction)(ID2D1Bitmap *, pointVector, double);
 
 #include <windows.h>
 #include "utility.h"
@@ -50,14 +56,17 @@ const WCHAR gameFontName[] = L"Microsoft YaHei UI";
 
 const WCHAR wallImageName[] = L"images/wall.png";
 const WCHAR heroImageName[] = L"images/hero.png";
+const WCHAR savedImageName[] = L"images/saved.png";
 
 const int XplorerLeftButton = 1;
 const int XplorerRightButton = 2;
 const int XplorerMiddleButton = 4;
 
-const int stageMainMenu = -2;
-const int stageOptions = -1;
-const int stageTutorial = 0;
+const int frameDeath = -4;
+const int frameStartAnimation = -3;
+const int frameMainMenu = -2;
+const int frameOptions = -1;
+const int frameGameMain = 0;
 
 const int maxStage = 1;
 
@@ -77,20 +86,12 @@ const double heroSideMargin = 9 * heroSizeMultiplier;
 const double heroTopMargin = 10 * heroSizeMultiplier;
 const double heroBottomMargin = 0 * heroSizeMultiplier;
 
-//const int mapWidth = 28;
-//const int mapHeight = 21;
-
 const int heroLeft = 12;
 const int heroRight = 0;
 const int heroStanding = 0;
 const int heroWalking = 4;
 const int heroFalling = 8;
 const int heroJumping = 10;
-
-/*const int blockEmpty = 0;
-const int blockWall = 1;
-const int blockStartingPoint = 2;
-const int blockCheckpoint = 3;*/
 
 const int blockEmpty = -1;
 const int blockNeedleUp = 2;
@@ -122,11 +123,9 @@ const UINT gameTimerID = 100;
 const int jumpKey = VK_SHIFT;
 const UINT maxJumpTime = 150; // max jump key hold time in milliseconds
 
-enum XplorerResult {
-	fileBroken = -1,
-	okay = 0,
-	direct2DError = -3
-};
+const gameResult fileBroken = -1;
+const gameResult okay = 0;
+const gameResult direct2DError = -3;
 
 enum directionX {
 	directionLeft = 0,
@@ -138,6 +137,14 @@ enum direction2D {
 	direction2DUp,
 	direction2DRight,
 	direction2DDown
+};
+
+enum heroAdjustResult {
+	heroNothing = 0,
+	heroHitWall = 1,
+	heroDead = 2,
+	heroLevelUp = 4,
+	heroCheckpoint = 8
 };
 
 /* Key code constants

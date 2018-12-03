@@ -35,6 +35,6 @@ void gameKeyUp(HWND, int);
 void gameMouseDown(HWND, int, int, int);
 void gameMouseUp(HWND, int, int, int);
 void gameMouseMove(HWND, int, int, int);
-void renderWindow(HWND);
+void gamePaint(HWND);
 
 #endif

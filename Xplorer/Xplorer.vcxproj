@@ -121,22 +121,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="animation.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="gameFrame.cpp" />
     <ClCompile Include="gameLevel.cpp" />
     <ClCompile Include="geometry.cpp" />
     <ClCompile Include="global.cpp" />
     <ClCompile Include="handler.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="uiMainMenu.cpp" />
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="animation.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="gameFrame.h" />
     <ClInclude Include="gameLevel.h" />
     <ClInclude Include="geometry.h" />
     <ClInclude Include="handler.h" />
     <ClInclude Include="json.h" />
+    <ClInclude Include="main.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="uiMainMenu.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>

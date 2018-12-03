@@ -33,24 +33,6 @@
 
 using json = nlohmann::json;
 
-int getHeroState(pointVector);
-void renderGame();
-void updateHero();
-void renderGame();
-
-/*struct gameStage {
-	ID2D1Bitmap *bkgImage;
-	int n, m, blocks[mapWidth][mapHeight];
-	XplorerResult loadFromFile(const WCHAR *);
-	XplorerResult loadFromJSON(const WCHAR *);
-	pointVector initialPosition;
-	json gameData;
-	~gameStage();
-};*/
-
-//void newStage(int);
-void startLevel(int, int);
-
 struct gameHero {
 	pointVector position, velocity;
 	bool lockX, lockY;
@@ -62,18 +44,36 @@ struct gameHero {
 	double right();
 	double bottom();
 	rectReal rect();
+	polygon poly();
 };
 
-struct staticNeedle {
-	bool isDeadly;
-	direction2D face;
-	polygon poly;
-};
+bool isOutOfMap(double, double);
+bool isOutOfMap(rectReal);
+bool isOutOfMap(pointVector);
+
+bool isWall(double, double);
+bool isWall(pointVector);
+
+int xWall(gameHero);
+int yWall(gameHero);
+
+void updateHero();
 
 int heroPositionAdjust(gameHero &);
 int heroFixTop(gameHero &, rectReal);
 int heroFixBottom(gameHero &, rectReal);
 int heroFixLeft(gameHero &, rectReal);
 int heroFixRight(gameHero &, rectReal);
+
+int getHeroState(pointVector);
+
+void renderGame();
+
+void levelUp();
+
+void startLevel(int, int);
+void startLevelAnimationFinish();
+void leaveMainMenuAnimationFinish();
+void levelUpAnimationFinish();
 
 #endif

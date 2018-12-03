@@ -10,6 +10,7 @@
 #include "json.h"
 #include "utility.h"
 #include "geometry.h"
+#include "gameFrame.h"
 
 using json = nlohmann::json;
 
@@ -17,10 +18,12 @@ struct gameLevel {
 	// Object of a single level
 	int rows, columns;
 	std::vector<std::vector<int> > grid;
-	ID2D1BitmapRenderTarget *frame;
-	ID2D1Bitmap *bitmap, *objects;
-	XplorerResult load(std::string);
+	//ID2D1BitmapRenderTarget *frame;
+	ID2D1Bitmap *objects;
+	gameFrame *frame;
 	pointVector initialPosition;
+	gameResult load(std::string);
+	gameLevel();
 	~gameLevel();
 };
 
@@ -28,13 +31,13 @@ struct gameChapter {
 	// Chapter object (manages levels)
 	std::string chapterName;
 	std::vector<gameLevel> levels;
-	XplorerResult load(std::string);
+	gameResult load(std::string);
 };
 
 struct gameManager {
 	// Root object of the game (manages chapters)
 	std::vector<gameChapter> chapters;
-	XplorerResult load(std::string);
+	gameResult load(std::string);
 };
 
 #endif

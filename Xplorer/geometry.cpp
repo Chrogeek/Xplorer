@@ -35,6 +35,14 @@ pointVector &pointVector::operator-=(pointVector b) {
 	return *this;
 }
 
+double pointVector::length() {
+	return sqrt(vX * vX + vY * vY);
+}
+
+double pointVector::polar() {
+	return atan2(vY, vX);
+}
+
 pointVector operator*(double a, pointVector b) {
 	return pointVector(a * b.vX, a * b.vY);
 }
@@ -47,20 +55,12 @@ double cross(pointVector a, pointVector b) {
 	return a.vX * b.vY - a.vY * b.vX;
 }
 
-double pointVector::length() {
-	return sqrt(vX * vX + vY * vY);
-}
-
 double angle(pointVector a, pointVector b) {
 	return acos(dot(a, b) / a.length() / b.length());
 }
 
-double pointVector::polar() {
-	return atan2(vY, vX);
-}
-
-int polygon::count() {
-	return (int)vertex.size();
+double distance(pointVector a, pointVector b) {
+	return (a - b).length();
 }
 
 double polygon::area() {
@@ -68,6 +68,10 @@ double polygon::area() {
 	for (int i = count() - 1; i >= 2; --i)
 		ans += cross(vertex[i - 1] - vertex[0], vertex[i] - vertex[0]);
 	return ans / 2.0;
+}
+
+int polygon::count() {
+	return (int)vertex.size();
 }
 
 int polygon::cover(pointVector p) {
@@ -84,11 +88,11 @@ int polygon::cover(pointVector p) {
 	return wn ? 1 : 0;
 }
 
-polygon::polygon() { vertex.clear(); }
-
 void polygon::counterclockwise() {
 	if (dcmp(area()) < 0) std::reverse(vertex.begin(), vertex.end());
 }
+
+polygon::polygon() { vertex.clear(); }
 
 line::line(pointVector p, pointVector v) {
 	this->p = p, this->v = v;
@@ -124,7 +128,7 @@ polygon semiplaneIntersection(std::vector<line> &lines) {
 		while (head < tail && !isOnLeft(lines[i], p[tail - 1])) --tail;
 		while (head < tail && !isOnLeft(lines[i], p[head])) ++head;
 		q[++tail] = lines[i];
-		if (dcmp(cross(q[tail].v, q[tail - 1].v)) < 0) {
+		if (dcmp(cross(q[tail].v, q[tail - 1].v)) == 0) {
 			--tail;
 			if (isOnLeft(q[tail], lines[i].p)) q[tail] = lines[i];
 		}
@@ -143,6 +147,8 @@ polygon semiplaneIntersection(std::vector<line> &lines) {
 }
 
 bool isPolygonIntersect(polygon a, polygon b) {
+	a.counterclockwise();
+	b.counterclockwise();
 	std::vector<line> lines;
 	lines.clear();
 	for (int i = 0, n = a.count(); i < n; ++i) lines.push_back(line(a.vertex[i], a.vertex[(i + 1) % n] - a.vertex[i]));

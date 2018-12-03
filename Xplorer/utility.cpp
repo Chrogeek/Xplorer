@@ -25,9 +25,11 @@
 #include "defs.h"
 #include <map>
 #include <string>
+#include <fstream>
 #include <algorithm>
 #include <windows.h>
 #include <wincodec.h>
+#include "json.h"
 #include "utility.h"
 
 #define DEBUG
@@ -37,30 +39,33 @@ extern IWICImagingFactory *imageFactory;
 extern ID2D1DCRenderTarget *mainRenderer;
 extern buttonUI *buttons[maxStage + 1];
 
-void limitVelocity(pointVector &x) {
-	x.vX = std::min(maxVelocity.vX, std::max(minVelocity.vX, x.vX));
-	x.vY = std::min(maxVelocity.vY, std::max(minVelocity.vY, x.vY));
+buttonUI::buttonUI(double x, double y, double w, double h, const WCHAR *fileName) {
+	this->x = x, this->y = y, this->width = w, this->height = h;
+	this->enabled = false;
+	this->buttonImage = nullptr;
+	loadBitmapFromFile(mainRenderer, imageFactory, fileName, (UINT)w, (UINT)h, &this->buttonImage);
 }
 
-int getClickedButtonID(double X, double Y) {
-	for (int i = 0; i <= maxButton; ++i) {
-		buttonUI *btn = buttons[i];
-		if (btn == nullptr) continue;
-		if (isInRect(X, Y, btn->x, btn->y, btn->x + btn->width, btn->y + btn->height)) return i;
-	}
-	return buttonNull;
+int dcmp(double x) {
+	if (fabs(x) < epsilon) return 0;
+	return x < 0.0 ? -1 : 1;
+}
+
+int dcmp(double x, double y) {
+	if (fabs(x - y) < epsilon) return 0;
+	return x < y ? -1 : 1;
 }
 
 bool isInRect(double x, double y, double x1, double y1, double x2, double y2) {
 	return dcmp(x1 - x) <= 0 && dcmp(x - x2) < 0 && dcmp(y1 - y) <= 0 && dcmp(y - y2) < 0;
 }
 
-bool isInInterval(double x, double x1, double x2) {
-	return dcmp(x1 - x) <= 0 && dcmp(x - x2) < 0;
-}
-
 bool isInRect(int x, int y, int x1, int y1, int x2, int y2) {
 	return isInInterval(x, x1, x2) && isInInterval(y, y1, y2);
+}
+
+bool isInInterval(double x, double x1, double x2) {
+	return dcmp(x1 - x) <= 0 && dcmp(x - x2) < 0;
 }
 
 bool isInInterval(int x, int x1, int x2) {
@@ -71,27 +76,7 @@ bool isIntervalIntersect(double l1, double r1, double l2, double r2) {
 	return dcmp(std::max(l1, l2), std::min(r1, r2)) < 0;
 }
 
-bool isIntervalEquivalent(double l1, double r1, double l2, double r2) {
-	return dcmp(l1, l2) == 0 && dcmp(r1, r2) == 0;
-}
-
 bool isRectIntersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
-	return isIntervalIntersect(x1, x2, x3, x4) && isIntervalIntersect(y1, y2, y3, y4);
-}
-
-double intervalIntersectionLength(double l1, double r1, double l2, double r2) {
-	return std::min(r1, r2) - std::max(l1, l2);
-}
-
-bool isIntervalIntersect(int l1, int r1, int l2, int r2) {
-	return std::max(l1, l2) < std::min(r1, r2);
-}
-
-bool isIntervalEquivalent(int l1, int r1, int l2, int r2) {
-	return l1 == l2 && r1 == r2;
-}
-
-bool isRectIntersect(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4) {
 	return isIntervalIntersect(x1, x2, x3, x4) && isIntervalIntersect(y1, y2, y3, y4);
 }
 
@@ -99,19 +84,115 @@ bool isRectIntersect(rectReal r1, rectReal r2) {
 	return isRectIntersect(r1.left, r1.top, r1.right, r1.bottom, r2.left, r2.top, r2.right, r2.bottom);
 }
 
-pointVector rectCenter(rectReal rect) {
-	return pointVector((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2);
+bool isIntervalEquivalent(double l1, double r1, double l2, double r2) {
+	return dcmp(l1, l2) == 0 && dcmp(r1, r2) == 0;
+}
+
+bool isIntervalEquivalent(int l1, int r1, int l2, int r2) {
+	return l1 == l2 && r1 == r2;
+}
+
+double intervalIntersectionLength(double l1, double r1, double l2, double r2) {
+	return std::min(r1, r2) - std::max(l1, l2);
 }
 
 int intervalIntersectionLength(int l1, int r1, int l2, int r2) {
 	return std::min(r1, r2) - std::max(l1, l2);
 }
 
-buttonUI::buttonUI(double x, double y, double w, double h, const WCHAR *fileName) {
-	this->x = x, this->y = y, this->width = w, this->height = h;
-	this->visible = false;
-	this->buttonImage = nullptr;
-	loadBitmapFromFile(mainRenderer, imageFactory, fileName, (UINT)w, (UINT)h, &this->buttonImage);
+bool isIntervalIntersect(int l1, int r1, int l2, int r2) {
+	return std::max(l1, l2) < std::min(r1, r2);
+}
+
+bool isRectIntersect(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4) {
+	return isIntervalIntersect(x1, x2, x3, x4) && isIntervalIntersect(y1, y2, y3, y4);
+}
+
+pointVector rectCenter(rectReal rect) {
+	return pointVector((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2);
+}
+
+rectFloat makeRectF(float left, float top, float right, float bottom) {
+	rectFloat ret;
+	ret.left = left;
+	ret.top = top;
+	ret.right = right;
+	ret.bottom = bottom;
+	return ret;
+}
+
+rectReal makeRectR(double left, double top, double right, double bottom) {
+	rectReal ret;
+	ret.left = left;
+	ret.top = top;
+	ret.right = right;
+	ret.bottom = bottom;
+	return ret;
+}
+
+D2D1_SIZE_U makeSizeU(int width, int height) {
+	D2D1_SIZE_U ans;
+	ans.width = width;
+	ans.height = height;
+	return ans;
+}
+
+D2D1_SIZE_F makeSizeF(float width, float height) {
+	D2D1_SIZE_F ans;
+	ans.width = width;
+	ans.height = height;
+	return ans;
+}
+
+D2D1_ELLIPSE makeEllipse(pointVector center, double rX, double rY) {
+	D2D1_ELLIPSE ans;
+	ans.point.x = (float)center.vX;
+	ans.point.y = (float)center.vY;
+	ans.radiusX = (float)rX;
+	ans.radiusY = (float)rY;
+	return ans;
+}
+
+rectFloat rectR2F(rectReal r) {
+	return makeRectF((float)r.left, (float)r.top, (float)r.right, (float)r.bottom);
+}
+
+rectReal rectF2R(rectFloat r) {
+	return makeRectR((double)r.left, (double)r.top, (double)r.right, (double)r.bottom);
+}
+
+std::string intToString(int x) {
+	char buf[bufferSize];
+	sprintf_s<bufferSize>(buf, "%d", x);
+	return std::string(buf);
+}
+
+std::wstring stringToWidestring(std::string str) {
+	WCHAR ans[bufferSize];
+	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, ans, bufferSize);
+	return std::wstring(ans);
+}
+
+void drawButton(ID2D1RenderTarget *renderer, buttonUI *button) {
+	if (button == nullptr) return;
+	renderer->DrawBitmap(button->buttonImage, makeRectF((float)button->x, (float)button->y, (float)(button->x + button->width), (float)(button->y + button->height)));
+}
+
+void disableAllButtons() {
+	for (int i = 0; i <= maxButton; ++i) {
+		buttonUI *btn = buttons[i];
+		if (btn == nullptr) continue;
+		btn->enabled = false;
+	}
+}
+
+int getClickedButtonID(double X, double Y) {
+	for (int i = 0; i <= maxButton; ++i) {
+		buttonUI *btn = buttons[i];
+		if (btn == nullptr) continue;
+		if (isInRect(X, Y, btn->x, btn->y, btn->x + btn->width, btn->y + btn->height)) return i;
+	}
+	return buttonNull;
 }
 // Load bitmap from app's resource
 HRESULT loadResourceBitmap(
@@ -318,48 +399,9 @@ HRESULT loadBitmapFromFile(ID2D1RenderTarget *pRenderTarget, IWICImagingFactory 
 	return hr;
 }
 
-void disableAllButtons() {
-	for (int i = 0; i <= maxButton; ++i) {
-		buttonUI *btn = buttons[i];
-		if (btn == nullptr) continue;
-		btn->visible = false;
-	}
-}
-
-int dcmp(double x) {
-	if (fabs(x) < epsilon) return 0;
-	return x < 0.0 ? -1 : 1;
-}
-
-int dcmp(double x, double y) {
-	if (fabs(x - y) < epsilon) return 0;
-	return x < y ? -1 : 1;
-}
-
-rectFloat makeRectF(float left, float top, float right, float bottom) {
-	rectFloat ret;
-	ret.left = left;
-	ret.top = top;
-	ret.right = right;
-	ret.bottom = bottom;
-	return ret;
-}
-
-rectReal makeRectR(double left, double top, double right, double bottom) {
-	rectReal ret;
-	ret.left = left;
-	ret.top = top;
-	ret.right = right;
-	ret.bottom = bottom;
-	return ret;
-}
-
-rectFloat rectR2F(rectReal r) {
-	return makeRectF((float)r.left, (float)r.top, (float)r.right, (float)r.bottom);
-}
-
-rectReal rectF2R(rectFloat r) {
-	return makeRectR((double)r.left, (double)r.top, (double)r.right, (double)r.bottom);
+void limitVelocity(pointVector &x) {
+	x.vX = std::min(maxVelocity.vX, std::max(minVelocity.vX, x.vX));
+	x.vY = std::min(maxVelocity.vY, std::max(minVelocity.vY, x.vY));
 }
 
 void debugPrintF(const char *strOutputString, ...) {
@@ -373,33 +415,10 @@ void debugPrintF(const char *strOutputString, ...) {
 #endif
 }
 
-void drawButton(buttonUI *button) {
-	if (button == nullptr) return;
-	mainRenderer->DrawBitmap(button->buttonImage, makeRectF((float)button->x, (float)button->y, (float)(button->x + button->width), (float)(button->y + button->height)));
-}
-
-std::string intToString(int x) {
-	char buf[bufferSize];
-	sprintf_s<bufferSize>(buf, "%d", x);
-	return std::string(buf);
-}
-
-std::wstring stringToWidestring(std::string str) {
-	WCHAR ans[bufferSize];
-	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, ans, bufferSize);
-	return std::wstring(ans);
-}
-
-D2D1_SIZE_U makeSizeU(int width, int height) {
-	D2D1_SIZE_U ans;
-	ans.width = width;
-	ans.height = height;
-	return ans;
-}
-
-D2D1_SIZE_F makeSizeF(float width, float height) {
-	D2D1_SIZE_F ans;
-	ans.width = width;
-	ans.height = height;
-	return ans;
+gameResult loadJSONFromFile(const char *file, json &data) {
+	std::ifstream fin(file);
+	if (fin.bad()) return fileBroken;
+	fin >> data;
+	fin.close();
+	return okay;
 }

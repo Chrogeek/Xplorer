@@ -7,7 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Xplorer", "Xplorer\Xplorer.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6148F720-9F48-4621-8A07-5F045CEBA106}"
 	ProjectSection(SolutionItems) = preProject
-		ADDITIONAL_TERMS.md = ADDITIONAL_TERMS.md
 		LICENSE.md = LICENSE.md
 		README.md = README.md
 	EndProjectSection

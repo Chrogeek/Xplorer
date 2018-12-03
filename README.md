@@ -12,3 +12,16 @@ A 2D jumping game. Also the assignment of Fundamentals of Programming course @ T
 * `utility.h/cpp`: Functions defined for help.
 * `gameLevel.h/cpp`: Structure of the game (chapters/levels).
 * `resource.h/rc`: Resource file.
+
+## Data files
+
+* `data/`: game main configuration directory
+	* `config.json/`: game settings
+* `chapters/`: game chapters folder
+	* `config.json`: configuration for the whole game
+	* `#/`: folder for a single chapter
+		* `config.json`: configuration for this chapter
+		* `#/`: folder for a single level
+			* `data.json`: map data for the level
+			* `tiles.json`: tile set for the level
+			* `save.json`: save config for the level

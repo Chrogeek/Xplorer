@@ -19,45 +19,18 @@ extern ID2D1SolidColorBrush *brushBlack;
 
 using json = nlohmann::json;
 
-XplorerResult gameManager::load(std::string folder) {
-	std::ifstream fin(folder + "/config.json");
-	if (fin.bad()) return XplorerResult::fileBroken;
-	json data;
-	fin >> data;
-	chapters.resize(data["chapters"]);
-	for (unsigned i = 0; i < chapters.size(); ++i) {
-		chapters[i].load(folder + "/" + intToString(i));
-	}
-	fin.close();
-	return XplorerResult::okay;
-}
-
-XplorerResult gameChapter::load(std::string folder) {
-	std::ifstream fin(folder + "/config.json");
-	if (fin.bad()) return XplorerResult::fileBroken;
-	json data;
-	fin >> data;
-	chapterName = data["title"];
-	levels.resize(data["levels"]);
-	for (unsigned i = 0; i < levels.size(); ++i) {
-		levels[i].load(folder + "/" + intToString(i));
-	}
-	fin.close();
-	return XplorerResult::okay;
-}
-
-XplorerResult gameLevel::load(std::string folder) {
+gameResult gameLevel::load(std::string folder) {
 	// Step 1: read the data
 
 	json data, metaData;
 
 	std::ifstream fin(folder + "/data.json");
-	if (fin.bad()) return XplorerResult::fileBroken;
+	if (fin.bad()) return fileBroken;
 	fin >> data;
 	fin.close();
 
 	fin.open(folder + "/tiles.json");
-	if (fin.bad()) return XplorerResult::fileBroken;
+	if (fin.bad()) return fileBroken;
 	fin >> metaData;
 	fin.close();
 
@@ -81,26 +54,24 @@ XplorerResult gameLevel::load(std::string folder) {
 
 	HRESULT result = S_OK;
 
-	safeRelease(bitmap);
-	safeRelease(objects);
-	safeRelease(frame);
+	safeNew(frame, gameFrame);
 
 	if (SUCCEEDED(result)) {
-		result = mainRenderer->CreateCompatibleRenderTarget(makeSizeF((float)columns * unitSize, (float)rows * unitSize), &frame);
+		result = mainRenderer->CreateCompatibleRenderTarget(makeSizeF((float)columns * unitSize, (float)rows * unitSize), &frame->renderer);
 	}
 	if (SUCCEEDED(result)) {
 		result = loadBitmapFromFile(mainRenderer, imageFactory, stringToWidestring(metaData["image"]).c_str(), metaData["imagewidth"], metaData["imageheight"], &objects);
 	}
 
-	frame->BeginDraw();
+	frame->renderer->BeginDraw();
 
 	ID2D1Bitmap *background = nullptr;
 
 	if (SUCCEEDED(result)) {
-		result = loadBitmapFromFile(frame, imageFactory, stringToWidestring(data["layers"][0]["image"]).c_str(), columns * unitSize, rows * unitSize, &background);
+		result = loadBitmapFromFile(frame->renderer, imageFactory, stringToWidestring(data["layers"][0]["image"]).c_str(), columns * unitSize, rows * unitSize, &background);
 	}
 	if (SUCCEEDED(result)) {
-		frame->DrawBitmap(background, makeRectF(0.f, 0.f, columns * unitSize, rows * unitSize));
+		frame->renderer->DrawBitmap(background, makeRectF(0.f, 0.f, (float)(columns * unitSize), (float)(rows * unitSize)));
 	}
 
 	safeRelease(background);
@@ -113,7 +84,7 @@ XplorerResult gameLevel::load(std::string folder) {
 				initialPosition.vY = (double)j * unitSize;
 				continue;
 			}
-			frame->DrawBitmap(objects, makeRectF((float)i * unitSize, (float)j * unitSize, (float)(i + 1) * unitSize, (float)(j + 1) * unitSize), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF((float)grid[i][j] * unitSize, 0.f, (float)(grid[i][j] + 1) * unitSize, (float)unitSize));
+			frame->renderer->DrawBitmap(objects, makeRectF((float)i * unitSize, (float)j * unitSize, (float)(i + 1) * unitSize, (float)(j + 1) * unitSize), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF((float)grid[i][j] * unitSize, 0.f, (float)(grid[i][j] + 1) * unitSize, (float)unitSize));
 		}
 	}
 	// Step 4: render text
@@ -130,24 +101,59 @@ XplorerResult gameLevel::load(std::string folder) {
 			result = writeFactory->CreateTextFormat(stringToWidestring(textObject["text"]["fontfamily"]).c_str(), nullptr, isBold ? DWRITE_FONT_WEIGHT_BOLD : DWRITE_FONT_WEIGHT_REGULAR, isItalic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, (float)textObject["text"]["pixelsize"], L"en-us", &textFormat);
 
 			if (SUCCEEDED(result)) {
-				frame->DrawTextA(text.c_str(), text.length(), textFormat, makeRectF((float)textObject["x"], (float)textObject["y"], (float)textObject["x"] + (float)textObject["width"], (float)textObject["y"] + (float)textObject["height"]), brushBlack);
+				frame->renderer->DrawTextA(text.c_str(), (UINT32)text.length(), textFormat, makeRectF((float)textObject["x"], (float)textObject["y"], (float)textObject["x"] + (float)textObject["width"], (float)textObject["y"] + (float)textObject["height"]), brushBlack);
 			}
 			safeRelease(textFormat);
 		}
 	}
 
-	frame->EndDraw();
+	frame->renderer->EndDraw();
 
 	// Step 5: finish
 	if (SUCCEEDED(result)) {
-		result = frame->GetBitmap(&bitmap);
+		result = frame->renderer->GetBitmap(&frame->bitmap);
 	}
-	if (result != S_OK) return XplorerResult::direct2DError;
-	return XplorerResult::okay;
+	if (SUCCEEDED(result)) {
+		result = frame->renderer->CreateBitmapBrush(frame->bitmap, &frame->brush);
+	}
+	if (result != S_OK) return direct2DError;
+	return okay;
+}
+
+gameLevel::gameLevel() {
+	frame = nullptr;
+	objects = nullptr;
+	grid.clear();
 }
 
 gameLevel::~gameLevel() {
-	safeRelease(bitmap);
 	safeRelease(objects);
-	safeRelease(frame);
+	delete frame;
+}
+
+gameResult gameChapter::load(std::string folder) {
+	std::ifstream fin(folder + "/config.json");
+	if (fin.bad()) return fileBroken;
+	json data;
+	fin >> data;
+	chapterName = data["title"];
+	levels.resize(data["levels"]);
+	for (unsigned i = 0; i < levels.size(); ++i) {
+		levels[i].load(folder + "/" + intToString(i));
+	}
+	fin.close();
+	return okay;
+}
+
+gameResult gameManager::load(std::string folder) {
+	std::ifstream fin(folder + "/config.json");
+	if (fin.bad()) return fileBroken;
+	json data;
+	fin >> data;
+	chapters.resize(data["chapters"]);
+	for (unsigned i = 0; i < chapters.size(); ++i) {
+		chapters[i].load(folder + "/" + intToString(i));
+	}
+	fin.close();
+	return okay;
 }

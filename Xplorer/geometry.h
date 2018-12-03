@@ -22,6 +22,7 @@ pointVector operator*(double, pointVector);
 double dot(pointVector, pointVector);
 double cross(pointVector, pointVector);
 double angle(pointVector, pointVector);
+double distance(pointVector, pointVector);
 
 struct polygon {
 	std::vector<pointVector> vertex; // list of vertices
@@ -40,6 +41,9 @@ struct line {
 
 bool isPointOnSegment(pointVector, pointVector, pointVector); // whether the point is on the segment. returns -1 if the point is on the boundary.
 
+bool isOnLeft(line, pointVector);
+pointVector lineIntersection(line, line);
 polygon semiplaneIntersection(std::vector<line> &);
+bool isPolygonIntersect(polygon, polygon);
 
 #endif

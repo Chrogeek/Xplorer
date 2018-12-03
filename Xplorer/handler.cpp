@@ -24,15 +24,18 @@
 
 #include "defs.h"
 #include <d2d1.h>
+#include <fstream>
 #include <windows.h>
 #include <wincodec.h>
+#include "json.h"
 #include "game.h"
 #include "handler.h"
 #include "utility.h"
 #include "gameLevel.h"
+#include "animation.h"
 
-//extern gameStage gameStages[maxStage + 1];
-//extern int currentStage;
+using json = nlohmann::json;
+
 extern int currentChapter, currentLevel;
 extern ID2D1Factory *d2dFactory;
 extern ID2D1DCRenderTarget *mainRenderer;
@@ -45,25 +48,36 @@ extern gameHero hero;
 extern UINT lastJumpTime;
 
 extern gameManager gameMaster;
+extern json saveData;
+
+extern gameFrame *currentFrame;
+extern gameFrame *mainFrame, *inGameFrame;
+extern gameFrame *animationFrame;
+
+extern animation currentAnimation;
+
+void initializeGame() {
+	std::ifstream fin("./data/save.json");
+	if (!fin.bad()) {
+		fin >> saveData;
+		fin.close();
+	}
+	currentFrame = mainFrame;
+	gameMaster.load("./chapters");
+}
 
 void gameTimer(HWND hwnd, UINT timerID) {
-	if (currentChapter >= stageTutorial) {
+	if (currentFrame == inGameFrame) {
 		updateHero();
 	}
 	InvalidateRect(hwnd, nullptr, false);
 	UpdateWindow(hwnd);
 }
 
-void initializeGame() {
-//	gameStages[1].loadFromFile(L"levels/1.txt");
-	currentChapter = stageMainMenu;
-	gameMaster.load("./chapters");
-}
-
 void gameKeyDown(HWND hwnd, int keyCode) {
 	if (!isInInterval(keyCode, 0, 128)) return;
 	isKeyDown[keyCode] = true;
-	if (currentChapter >= stageTutorial) {
+	if (currentFrame == inGameFrame) {
 		if (keyCode == VK_LEFT) hero.face = directionLeft, hero.lockX = false;
 		else if (keyCode == VK_RIGHT) hero.face = directionRight, hero.lockX = false;
 		else if (keyCode == jumpKey) {
@@ -87,41 +101,34 @@ void gameMouseDown(HWND hwnd, int button, int X, int Y) {}
 
 void gameMouseUp(HWND hwnd, int button, int X, int Y) {
 	int buttonClicked = getClickedButtonID((double)X, (double)Y);
-	switch (currentChapter) {
-		case stageMainMenu:
-		{
-			if (buttonClicked == buttonExit) {
-				PostQuitMessage(0);
-			} else if (buttonClicked == buttonStart) {
-				disableAllButtons();
-				startLevel(0, 0);
-			}
-			break;
-		}
-		default:
-		{
-			break;
+	if (currentFrame == mainFrame) {
+		if (buttonClicked == buttonExit) {
+			PostQuitMessage(0);
+		} else if (buttonClicked == buttonStart) {
+			disableAllButtons();
+		//	exitAnimation();
+			currentAnimation.startAnimation(mainFrame->bitmap, new linearAnimation(timeGetTime(), 1000), crossExpand, leaveMainMenuAnimationFinish);
 		}
 	}
 }
 
 void gameMouseMove(HWND hwnd, int button, int X, int Y) {}
 
-void renderWindow(HWND hwnd) {
+void gamePaint(HWND hwnd) {
 	if (mainRenderer == nullptr) return;
+	if (currentFrame == nullptr) return;
 
 	mainRenderer->BeginDraw();
-
 	mainRenderer->Clear();
-	switch (currentChapter) {
-		case stageMainMenu:
+
+	if (currentFrame == animationFrame) {
+		currentAnimation.routine();
+	}
+/*	switch (currentFrame) {
+		case frameMainMenu:
 		{
-			mainRenderer->DrawBitmap(bitmapBackground, makeRectF(0, 0, windowClientWidth, windowClientHeight));
-			buttonUI *btnStart = buttons[buttonStart], *btnExit = buttons[buttonExit];
-			if (btnStart) btnStart->visible = true;
-			if (btnExit) btnExit->visible = true;
-			drawButton(btnStart);
-			drawButton(btnExit);
+		//	mainRenderer->DrawBitmap(bitmapBackground, makeRectF(0, 0, windowClientWidth, windowClientHeight));
+			mainRenderer->FillRectangle(makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight), mainFrame->)
 			break;
 		}
 		default:
@@ -129,7 +136,12 @@ void renderWindow(HWND hwnd) {
 			renderGame();
 			break;
 		}
+	}*/
+	
+	if (currentFrame->brush != nullptr) {
+		mainRenderer->FillRectangle(makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight), currentFrame->brush);
 	}
+	if (currentFrame->render != nullptr) currentFrame->render();
 
 	mainRenderer->EndDraw();
 }

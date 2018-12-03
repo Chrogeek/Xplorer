@@ -32,28 +32,43 @@
 #include "game.h"
 #include "utility.h"
 #include "gameLevel.h"
+#include "gameFrame.h"
+#include "animation.h"
 
-//int currentStage;
 int currentChapter, currentLevel;
+gameFrame *currentFrame = nullptr;
 
 buttonUI *buttons[maxButton + 1];
-//gameStage gameStages[maxStage + 1];
 
+//animationHelper *currentAnimation = nullptr;
+animation currentAnimation;
+
+// Direct2D factory objects
 ID2D1Factory *d2dFactory = nullptr;
 IWICImagingFactory *imageFactory = nullptr;
 IDWriteFactory *writeFactory = nullptr;
+
+// Global renderer
 IDWriteTextFormat *textFormatNormal = nullptr;
 ID2D1DCRenderTarget *mainRenderer = nullptr;
+
+// Global images
 ID2D1Bitmap *bkgImage = nullptr, *wallImage = nullptr, *heroImage = nullptr;
-ID2D1Bitmap *bitmapBackground = nullptr;
+ID2D1Bitmap *bitmapBackground = nullptr, *savedImage = nullptr;
 ID2D1SolidColorBrush *brushBlack = nullptr;
 
-ID2D1BitmapRenderTarget *mainFrame = nullptr;
+//ID2D1BitmapRenderTarget *mainFrame = nullptr;
+gameFrame *mainFrame = nullptr, *inGameFrame = nullptr, *animationFrame = nullptr;
+//gameFrame *startAnimationFrame = nullptr, *deathAnimationFrame = nullptr;
+//gameFrame *exitAnimationFrame = nullptr;
 
 float dpiX, dpiY;
 
 gameHero hero;
 bool isKeyDown[128];
 UINT lastJumpTime;
+UINT lastSaveTime;
+
+json saveData;
 
 gameManager gameMaster;

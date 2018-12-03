@@ -36,6 +36,15 @@
     <ClCompile Include="gameLevel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="gameFrame.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="uiMainMenu.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="animation.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defs.h">
@@ -60,6 +69,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="json.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="gameFrame.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="uiMainMenu.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="main.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="animation.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
