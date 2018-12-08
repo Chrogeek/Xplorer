@@ -1,6 +1,11 @@
 #include "defs.h"
 #include <string>
 #include <fstream>
+#include <iomanip>
+#include <vector>
+#include <algorithm>
+#include <direct.h>
+#include <io.h>
 #include <d2d1.h>
 #include <dwrite.h>
 #include "json.h"
@@ -17,22 +22,43 @@ extern IDWriteTextFormat *textFormatNormal;
 extern ID2D1DCRenderTarget *mainRenderer;
 extern ID2D1SolidColorBrush *brushBlack;
 
+extern gameManager gameMaster;
+extern int currentChapter, currentLevel;
+
 using json = nlohmann::json;
+
+std::vector<int> getNumericInDirectory(std::string dir) {
+	std::vector<int> files;
+	_finddata_t file;
+	intptr_t lf;
+	if ((lf = _findfirst((dir + "/*").c_str(), &file)) != -1) {
+		while (_findnext(lf, &file) == 0) {
+			if (strcmp(file.name, ".") == 0 || strcmp(file.name, "..") == 0) continue;
+			if (!(file.attrib | FILE_ATTRIBUTE_DIRECTORY)) continue;
+			int num = getNumberFromString(std::string(file.name));
+			if (num != -1) files.push_back(num);
+		}
+	}
+	_findclose(lf);
+	std::sort(files.begin(), files.end());
+	return files;
+}
 
 gameResult gameLevel::load(std::string folder) {
 	// Step 1: read the data
 
 	json data, metaData;
 
-	std::ifstream fin(folder + "/data.json");
-	if (fin.bad()) return fileBroken;
-	fin >> data;
-	fin.close();
+	if (loadJSONFromFile(folder + "/data.json", data) != okay) return fileBroken;
 
-	fin.open(folder + "/tiles.json");
-	if (fin.bad()) return fileBroken;
-	fin >> metaData;
-	fin.close();
+	if (loadJSONFromFile(folder + "/tiles.json", metaData) != okay) return fileBroken;
+
+	loadJSONFromFile(folder + "/config.json", saveData);
+
+	if (!saveData.count(itemLastX)) saveData[itemLastX] = -1.0;
+	if (!saveData.count(itemLastY)) saveData[itemLastY] = -1.0;
+	if (!saveData.count(itemTime)) saveData[itemTime] = 0ll;
+	if (!saveData.count(itemDeaths)) saveData[itemDeaths] = 0;
 
 	// Step 2: make the grid
 
@@ -81,15 +107,14 @@ gameResult gameLevel::load(std::string folder) {
 			if (grid[i][j] == blockEmpty) continue;
 			if (grid[i][j] == blockStartingPoint) {
 				initialPosition.vX = (double)i * unitSize;
-				initialPosition.vY = (double)j * unitSize;
+				initialPosition.vY = (double)(j + 1) * unitSize - heroSize;
 				continue;
 			}
 			frame->renderer->DrawBitmap(objects, makeRectF((float)i * unitSize, (float)j * unitSize, (float)(i + 1) * unitSize, (float)(j + 1) * unitSize), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF((float)grid[i][j] * unitSize, 0.f, (float)(grid[i][j] + 1) * unitSize, (float)unitSize));
 		}
 	}
-	// Step 4: render text
 
-	IDWriteTextFormat *textFormat = nullptr;
+	// Step 4: render text
 
 	if (SUCCEEDED(result)) {
 		for (auto textObject : data["layers"][2]["objects"]) {
@@ -97,13 +122,11 @@ gameResult gameLevel::load(std::string folder) {
 			bool isBold = false, isItalic = false;
 			if (textObject["text"]["bold"] == true) isBold = true;
 			if (textObject["text"]["italic"] == true) isItalic = true;
+			float fontSize = textObject["text"].count("pixelsize") ? (float)textObject["text"]["pixelsize"] : 16.f;
 
-			result = writeFactory->CreateTextFormat(stringToWidestring(textObject["text"]["fontfamily"]).c_str(), nullptr, isBold ? DWRITE_FONT_WEIGHT_BOLD : DWRITE_FONT_WEIGHT_REGULAR, isItalic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, (float)textObject["text"]["pixelsize"], L"en-us", &textFormat);
-
-			if (SUCCEEDED(result)) {
-				frame->renderer->DrawTextA(text.c_str(), (UINT32)text.length(), textFormat, makeRectF((float)textObject["x"], (float)textObject["y"], (float)textObject["x"] + (float)textObject["width"], (float)textObject["y"] + (float)textObject["height"]), brushBlack);
-			}
-			safeRelease(textFormat);
+			result = drawText(frame->renderer, writeFactory, stringToWidestring(textObject["text"]["fontfamily"]),
+				isBold, isItalic, fontSize, text, makeRectF((float)textObject["x"], (float)textObject["y"],
+				(float)textObject["x"] + (float)textObject["width"], (float)textObject["y"] + (float)textObject["height"]), brushBlack);
 		}
 	}
 
@@ -120,6 +143,14 @@ gameResult gameLevel::load(std::string folder) {
 	return okay;
 }
 
+gameResult gameLevel::save(std::string folder) {
+	std::ofstream fout(folder + "/config.json");
+	if (!fout.is_open()) return fileBroken;
+	fout << std::setw(4) << saveData << std::endl;
+	fout.close();
+	return okay;
+}
+
 gameLevel::gameLevel() {
 	frame = nullptr;
 	objects = nullptr;
@@ -132,28 +163,67 @@ gameLevel::~gameLevel() {
 }
 
 gameResult gameChapter::load(std::string folder) {
-	std::ifstream fin(folder + "/config.json");
-	if (fin.bad()) return fileBroken;
-	json data;
-	fin >> data;
-	chapterName = data["title"];
-	levels.resize(data["levels"]);
+	loadJSONFromFile(folder + "/config.json", saveData);
+	if (!saveData.count(itemTitle)) saveData[itemTitle] = "";
+	if (!saveData.count(itemTime)) saveData[itemTime] = 0.0;
+	if (!saveData.count(itemDeaths)) saveData[itemDeaths] = 0;
+	if (!saveData.count(itemLastSaved)) saveData[itemLastSaved] = -1;
+	std::vector<int> levelID = getNumericInDirectory(folder);
+	levels.resize(levelID.size());
 	for (unsigned i = 0; i < levels.size(); ++i) {
-		levels[i].load(folder + "/" + intToString(i));
+	//	printf("Loading level %d\n", levelID[i]);
+		levels[i].load(folder + "/" + intToString(levelID[i]));
 	}
-	fin.close();
+	if (saveData[itemLastSaved] >= 0) currentLevel = saveData[itemLastSaved];
+	return okay;
+}
+
+gameResult gameChapter::save(std::string folder) {
+	std::ofstream fout(folder + "/config.json");
+	if (!fout.is_open()) return fileBroken;
+	fout << std::setw(4) << saveData << std::endl;
+	fout.close();
 	return okay;
 }
 
 gameResult gameManager::load(std::string folder) {
-	std::ifstream fin(folder + "/config.json");
-	if (fin.bad()) return fileBroken;
-	json data;
-	fin >> data;
-	chapters.resize(data["chapters"]);
+	loadJSONFromFile(folder + "/config.json", saveData);
+	if (!saveData.count(itemTime)) saveData[itemTime] = 0.0;
+	if (!saveData.count(itemDeaths)) saveData[itemDeaths] = 0;
+	if (!saveData.count(itemLastSaved)) saveData[itemLastSaved] = -1;
+	std::vector<int> chapterID = getNumericInDirectory(folder);
+	chapters.resize(chapterID.size());
 	for (unsigned i = 0; i < chapters.size(); ++i) {
-		chapters[i].load(folder + "/" + intToString(i));
+	//	printf("Loading chapter %d\n", chapterID[i]);
+		chapters[i].load(folder + "/" + intToString(chapterID[i]));
 	}
-	fin.close();
+	if (saveData[itemLastSaved] >= 0) currentChapter = saveData[itemLastSaved];
 	return okay;
+}
+
+gameResult gameManager::save(std::string folder) {
+	std::ofstream fout(folder + "/config.json");
+	if (!fout.is_open()) return fileBroken;
+	fout << std::setw(4) << saveData << std::endl;
+	fout.close();
+	return okay;
+}
+
+gameLevel &theLevel() {
+	return gameMaster.chapters[currentChapter].levels[currentLevel];
+}
+
+gameChapter &theChapter() {
+	return gameMaster.chapters[currentChapter];
+}
+
+void deleteSave() {
+	gameMaster.saveData[itemLastSaved] = -1;
+	for (int i = 0; i < (int)gameMaster.chapters.size(); ++i) {
+		gameMaster.chapters[i].saveData[itemLastSaved] = -1;
+		for (int j = 0; j < (int)gameMaster.chapters[i].levels.size(); ++j) {
+			gameMaster.chapters[i].levels[j].saveData[itemLastX] = -1.0;
+			gameMaster.chapters[i].levels[j].saveData[itemLastY] = -1.0;
+		}
+	}
 }

@@ -29,9 +29,11 @@
 #include <windows.h>
 #include <wincodec.h>
 #include <d2d1.h>
+#include <dwrite.h>
 #include <string>
 #include <vector>
 #include "json.h"
+#include "gameFrame.h"
 #include "geometry.h"
 
 #define safeRelease(p) if (p != nullptr) { p->Release(); p = nullptr; }
@@ -57,6 +59,8 @@ struct rectReal {
 	double right;
 	double bottom;
 };
+
+void doEvents();
 
 int dcmp(double);
 int dcmp(double, double);
@@ -95,6 +99,7 @@ D2D1_ELLIPSE makeEllipse(pointVector, double, double);
 rectFloat rectR2F(rectReal);
 rectReal rectF2R(rectFloat);
 
+int getNumberFromString(std::string);
 std::string intToString(int);
 std::wstring stringToWidestring(std::string);
 
@@ -109,5 +114,12 @@ void limitVelocity(pointVector &);
 
 void debugPrintF(const char *, ...);
 
-gameResult loadJSONFromFile(const char *, json &);
+gameResult loadJSONFromFile(std::string, json &);
+
+HRESULT drawText(ID2D1RenderTarget *, IDWriteFactory *, std::wstring, bool, bool, float, std::wstring, rectFloat, ID2D1Brush *);
+
+void switchToFrame(gameFrame *);
+void loadNextFrame();
+
+double randomDouble(double, double);
 #endif

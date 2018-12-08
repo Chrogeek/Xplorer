@@ -35,40 +35,50 @@
 #include "gameFrame.h"
 #include "animation.h"
 
-int currentChapter, currentLevel;
-gameFrame *currentFrame = nullptr;
+// Game frames
+gameFrame *statisticsFrame = nullptr, *optionFrame = nullptr, *aboutFrame = nullptr;
+gameFrame *mainFrame = nullptr, *inGameFrame = nullptr, *animationFrame = nullptr;
+gameFrame *pausedFrame = nullptr;
 
+// Frames (pointers to frames defined above)
+gameFrame *lastFrame = nullptr, *currentFrame = nullptr, *nextFrame = nullptr;
+
+// UI buttons
 buttonUI *buttons[maxButton + 1];
 
-//animationHelper *currentAnimation = nullptr;
-animation currentAnimation;
-
-// Direct2D factory objects
+// Direct2D drawing related
 ID2D1Factory *d2dFactory = nullptr;
 IWICImagingFactory *imageFactory = nullptr;
 IDWriteFactory *writeFactory = nullptr;
-
-// Global renderer
 IDWriteTextFormat *textFormatNormal = nullptr;
 ID2D1DCRenderTarget *mainRenderer = nullptr;
 
 // Global images
 ID2D1Bitmap *bkgImage = nullptr, *wallImage = nullptr, *heroImage = nullptr;
 ID2D1Bitmap *bitmapBackground = nullptr, *savedImage = nullptr;
-ID2D1SolidColorBrush *brushBlack = nullptr;
+ID2D1SolidColorBrush *brushBlack = nullptr, *brushWhite = nullptr;
 
-//ID2D1BitmapRenderTarget *mainFrame = nullptr;
-gameFrame *mainFrame = nullptr, *inGameFrame = nullptr, *animationFrame = nullptr;
-//gameFrame *startAnimationFrame = nullptr, *deathAnimationFrame = nullptr;
-//gameFrame *exitAnimationFrame = nullptr;
+// Animation helper object
+animation animator;
 
+// Game status
+gameHero hero;
+int currentChapter = -1, currentLevel = -1;
+DWORD lastJumpTime;
+DWORD lastSaveTime;
+int saveX, saveY;
+bool newLevelStarted;
+
+// DPI related
 float dpiX, dpiY;
 
-gameHero hero;
+// Keyboard
 bool isKeyDown[128];
-UINT lastJumpTime;
-UINT lastSaveTime;
 
-json saveData;
-
+// Game levels
 gameManager gameMaster;
+
+// Statistics data
+int deaths, xplorations;
+longint timePlayed;
+longint bestPlay;

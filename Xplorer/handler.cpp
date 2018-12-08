@@ -33,6 +33,8 @@
 #include "utility.h"
 #include "gameLevel.h"
 #include "animation.h"
+#include "uiMainMenu.h"
+#include "uiPaused.h"
 
 using json = nlohmann::json;
 
@@ -45,23 +47,19 @@ extern buttonUI *buttons[maxButton + 1];
 
 extern bool isKeyDown[128];
 extern gameHero hero;
-extern UINT lastJumpTime;
+extern DWORD lastJumpTime;
 
 extern gameManager gameMaster;
-extern json saveData;
+//extern json saveData;
 
-extern gameFrame *currentFrame;
+extern gameFrame *currentFrame, *lastFrame;
 extern gameFrame *mainFrame, *inGameFrame;
-extern gameFrame *animationFrame;
+extern gameFrame *animationFrame, *pausedFrame;
 
-extern animation currentAnimation;
+extern animation animator;
+extern float dpiX, dpiY;
 
 void initializeGame() {
-	std::ifstream fin("./data/save.json");
-	if (!fin.bad()) {
-		fin >> saveData;
-		fin.close();
-	}
 	currentFrame = mainFrame;
 	gameMaster.load("./chapters");
 }
@@ -84,10 +82,16 @@ void gameKeyDown(HWND hwnd, int keyCode) {
 			++hero.jumpCount;
 			if (hero.jumpCount <= 2) { // we allow only two jumps in a row
 				hero.lockY = false;
-			//	hero.velocity += jumpVelocityDelta; // to be updated. this should not be the final acceleration scheme.
 				lastJumpTime = timeGetTime();
-				hero.velocity.vY = jumpStartVelocity.vY;
+				hero.velocity.vY = jumpVelocityDelta[hero.jumpCount - 1].vY;
 			}
+		} else if (keyCode == VK_ESCAPE) {
+			switchToFrame(pausedFrame);
+		} else if (keyCode == VK_R || keyCode == VK_r) {
+			switchToFrame(inGameFrame);
+			lastFrame = mainFrame;
+		} else if (keyCode == VK_F2) {
+			switchToFrame(mainFrame);
 		}
 	}
 }
@@ -95,24 +99,50 @@ void gameKeyDown(HWND hwnd, int keyCode) {
 void gameKeyUp(HWND hwnd, int keyCode) {
 	if (!isInInterval(keyCode, 0, 128)) return;
 	isKeyDown[keyCode] = false;
-}
-
-void gameMouseDown(HWND hwnd, int button, int X, int Y) {}
-
-void gameMouseUp(HWND hwnd, int button, int X, int Y) {
-	int buttonClicked = getClickedButtonID((double)X, (double)Y);
-	if (currentFrame == mainFrame) {
-		if (buttonClicked == buttonExit) {
-			PostQuitMessage(0);
-		} else if (buttonClicked == buttonStart) {
-			disableAllButtons();
-		//	exitAnimation();
-			currentAnimation.startAnimation(mainFrame->bitmap, new linearAnimation(timeGetTime(), 1000), crossExpand, leaveMainMenuAnimationFinish);
+	if (currentFrame == inGameFrame) {
+		if (keyCode == jumpKey) {
+			if (timeGetTime() - lastJumpTime <= maxJumpTime * 0.4 && hero.jumpCount == 1) {
+				hero.velocity.vY = std::max(0.0, hero.velocity.vY);
+			}
 		}
 	}
 }
 
-void gameMouseMove(HWND hwnd, int button, int X, int Y) {}
+void gameMouseDown(HWND hwnd, int button, double X, double Y) {
+	X /= dpiX / 96.f, Y /= dpiY / 96.f;
+}
+
+void gameMouseUp(HWND hwnd, int button, double X, double Y) {
+	X /= dpiX / 96.f, Y /= dpiY / 96.f;
+	int buttonClicked = getClickedButtonID(X, Y);
+	if (currentFrame == mainFrame) {
+		if (buttonClicked == buttonExit) {
+			PostQuitMessage(0);
+		} else if (buttonClicked == buttonLoad) {
+			disableAllButtons();
+			switchToFrame(inGameFrame);
+		} else if (buttonClicked == buttonStart) {
+			disableAllButtons();
+			deleteSave();
+			switchToFrame(inGameFrame);
+		}
+	} else if (currentFrame == pausedFrame) {
+		if (buttonClicked == buttonHome) {
+		//	switchToFrame(mainFrame);
+			gameKeyDown(hwnd, VK_F2);
+		} else if (buttonClicked == buttonContinue) {
+			switchToFrame(inGameFrame);
+		} else if (buttonClicked == buttonRetry) {
+		//	switchToFrame(inGameFrame);
+		//	lastFrame = mainFrame;
+			gameKeyDown(hwnd, VK_R);
+		}
+	}
+}
+
+void gameMouseMove(HWND hwnd, int button, double X, double Y) {
+	X /= dpiX / 96.f, Y /= dpiY / 96.f;
+}
 
 void gamePaint(HWND hwnd) {
 	if (mainRenderer == nullptr) return;
@@ -122,21 +152,8 @@ void gamePaint(HWND hwnd) {
 	mainRenderer->Clear();
 
 	if (currentFrame == animationFrame) {
-		currentAnimation.routine();
+		animator.routine();
 	}
-/*	switch (currentFrame) {
-		case frameMainMenu:
-		{
-		//	mainRenderer->DrawBitmap(bitmapBackground, makeRectF(0, 0, windowClientWidth, windowClientHeight));
-			mainRenderer->FillRectangle(makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight), mainFrame->)
-			break;
-		}
-		default:
-		{
-			renderGame();
-			break;
-		}
-	}*/
 	
 	if (currentFrame->brush != nullptr) {
 		mainRenderer->FillRectangle(makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight), currentFrame->brush);
@@ -144,4 +161,8 @@ void gamePaint(HWND hwnd) {
 	if (currentFrame->render != nullptr) currentFrame->render();
 
 	mainRenderer->EndDraw();
+}
+
+void releaseAllKeys() {
+	memset(isKeyDown, 0, sizeof isKeyDown);
 }

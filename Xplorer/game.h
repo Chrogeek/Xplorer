@@ -73,7 +73,16 @@ void levelUp();
 
 void startLevel(int, int);
 void startLevelAnimationFinish();
-void leaveMainMenuAnimationFinish();
 void levelUpAnimationFinish();
+
+void levelUpHoldFrame(ID2D1Bitmap *, double);
+void levelUpHoldFinish();
+
+void getRenderRect(ID2D1Bitmap *, gameHero &, rectFloat &, rectFloat &);
+void renderGameFrame(ID2D1Bitmap *, gameHero &, rectFloat, rectFloat, float);
+
+void gameFrameEnter();
+void gameFrameLeave();
+void gameFrameLeaveFinish();
 
 #endif

@@ -32,9 +32,11 @@ void initializeGame();
 void gameTimer(HWND, UINT);
 void gameKeyDown(HWND, int);
 void gameKeyUp(HWND, int);
-void gameMouseDown(HWND, int, int, int);
-void gameMouseUp(HWND, int, int, int);
-void gameMouseMove(HWND, int, int, int);
+void gameMouseDown(HWND, int, double, double);
+void gameMouseUp(HWND, int, double, double);
+void gameMouseMove(HWND, int, double, double);
 void gamePaint(HWND);
+
+void releaseAllKeys();
 
 #endif

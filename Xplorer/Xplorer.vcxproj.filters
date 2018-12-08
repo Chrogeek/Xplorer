@@ -45,6 +45,15 @@
     <ClCompile Include="animation.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="uiPaused.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="uiStatistics.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="particles.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defs.h">
@@ -68,9 +77,6 @@
     <ClInclude Include="gameLevel.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="json.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="gameFrame.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -83,10 +89,22 @@
     <ClInclude Include="animation.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="uiPaused.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="uiStatistics.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="particles.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Xplorer.rc">
       <Filter>资源文件</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="DeclareDPIAware.manifest" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,91 @@
+{ "height":9,
+ "infinite":false,
+ "layers":[
+        {
+         "id":3,
+         "image":"images\/bg_black.png",
+         "name":"Image Layer",
+         "opacity":1,
+         "type":"imagelayer",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "data":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 16, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 16, 16, 0, 0, 0, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 0, 0, 0, 7, 0, 0, 16, 16, 16, 16, 16, 16, 0, 0, 8],
+         "height":9,
+         "id":1,
+         "name":"Tile Layer",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":12,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":2,
+         "name":"Object Layer",
+         "objects":[
+                {
+                 "height":40.6666666666667,
+                 "id":9,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "fontfamily":"Segoe UI",
+                     "italic":true,
+                     "pixelsize":27,
+                     "text":"Tutorial #2: Jump",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":384,
+                 "x":0,
+                 "y":0
+                }, 
+                {
+                 "height":96,
+                 "id":10,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "bold":true,
+                     "fontfamily":"Segoe UI Semibold",
+                     "italic":true,
+                     "pixelsize":17,
+                     "text":"Press SHIFT key to jump.\nA longer press makes a higher jump!",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":384,
+                 "x":0,
+                 "y":32
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }],
+ "nextlayerid":5,
+ "nextobjectid":11,
+ "orientation":"orthogonal",
+ "renderorder":"right-down",
+ "tiledversion":"1.2.1",
+ "tileheight":32,
+ "tilesets":[
+        {
+         "firstgid":1,
+         "source":"tiles.json"
+        }],
+ "tilewidth":32,
+ "type":"map",
+ "version":1.2,
+ "width":12
+}

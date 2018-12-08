@@ -24,13 +24,18 @@
 
 #include "defs.h"
 #include <map>
+#include <cctype>
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <exception>
+#include <dwrite.h>
 #include <windows.h>
 #include <wincodec.h>
 #include "json.h"
 #include "utility.h"
+#include "gameFrame.h"
+#include "animation.h"
 
 #define DEBUG
 
@@ -38,12 +43,22 @@ extern ID2D1Factory *d2dFactory;
 extern IWICImagingFactory *imageFactory;
 extern ID2D1DCRenderTarget *mainRenderer;
 extern buttonUI *buttons[maxStage + 1];
+extern gameFrame *currentFrame, *nextFrame, *lastFrame;
+extern animation animator;
 
 buttonUI::buttonUI(double x, double y, double w, double h, const WCHAR *fileName) {
 	this->x = x, this->y = y, this->width = w, this->height = h;
 	this->enabled = false;
 	this->buttonImage = nullptr;
 	loadBitmapFromFile(mainRenderer, imageFactory, fileName, (UINT)w, (UINT)h, &this->buttonImage);
+}
+
+void doEvents() {
+	MSG msg;
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 }
 
 int dcmp(double x) {
@@ -161,6 +176,15 @@ rectReal rectF2R(rectFloat r) {
 	return makeRectR((double)r.left, (double)r.top, (double)r.right, (double)r.bottom);
 }
 
+int getNumberFromString(std::string s) {
+	int ans = 0;
+	for (unsigned i = 0; i < s.length(); ++i) {
+		if (!isdigit(s[i])) return -1;
+		(ans *= 10) += s[i] - '0';
+	}
+	return ans;
+}
+
 std::string intToString(int x) {
 	char buf[bufferSize];
 	sprintf_s<bufferSize>(buf, "%d", x);
@@ -175,6 +199,7 @@ std::wstring stringToWidestring(std::string str) {
 
 void drawButton(ID2D1RenderTarget *renderer, buttonUI *button) {
 	if (button == nullptr) return;
+	if (button->buttonImage == nullptr) return;
 	renderer->DrawBitmap(button->buttonImage, makeRectF((float)button->x, (float)button->y, (float)(button->x + button->width), (float)(button->y + button->height)));
 }
 
@@ -415,10 +440,42 @@ void debugPrintF(const char *strOutputString, ...) {
 #endif
 }
 
-gameResult loadJSONFromFile(const char *file, json &data) {
-	std::ifstream fin(file);
-	if (fin.bad()) return fileBroken;
-	fin >> data;
-	fin.close();
-	return okay;
+gameResult loadJSONFromFile(std::string file, json &data) {
+	try {
+		std::ifstream fin(file);
+		fin >> data;
+		fin.close();
+		return okay;
+	} catch (std::exception e) {
+		data.clear();
+		return fileBroken;
+	}
+}
+
+HRESULT drawText(ID2D1RenderTarget *renderer, IDWriteFactory *writeFactory, std::wstring fontFamilyName, bool isBold, bool isItalic, float fontSize,  std::wstring text, rectFloat layout, ID2D1Brush *brush) {
+	HRESULT result = S_OK;
+	IDWriteTextFormat *textFormat = nullptr;
+	if (SUCCEEDED(result)) {
+		result = writeFactory->CreateTextFormat(fontFamilyName.c_str(), nullptr, isBold ? DWRITE_FONT_WEIGHT_BOLD : DWRITE_FONT_WEIGHT_REGULAR, isItalic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"en-us", &textFormat);
+	}
+	if (SUCCEEDED(result)) {
+		renderer->DrawTextA(text.c_str(), (UINT32)text.length(), textFormat, layout, brush);
+	}
+	return result;
+}
+
+void switchToFrame(gameFrame *newFrame) {
+	lastFrame = currentFrame;
+	if (currentFrame != nullptr && currentFrame->exit != nullptr) {
+		nextFrame = newFrame;
+		currentFrame->exit();
+	} else newFrame->enter();
+}
+
+void loadNextFrame() {
+	if (nextFrame != nullptr && currentFrame != nextFrame) nextFrame->enter();
+}
+
+double randomDouble(double l, double r) {
+	return rand() / (double)(RAND_MAX) * (r - l) + l;
 }

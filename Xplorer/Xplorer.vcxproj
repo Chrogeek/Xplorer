@@ -89,7 +89,8 @@
       <AdditionalDependencies>d2d1.lib;dwrite.lib;windowscodecs.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>editbin /SUBSYSTEM:CONSOLE $(OutDir)\$(ProjectName).exe</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -118,6 +119,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>d2d1.lib;dwrite.lib;windowscodecs.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -129,7 +131,10 @@
     <ClCompile Include="global.cpp" />
     <ClCompile Include="handler.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="particles.cpp" />
     <ClCompile Include="uiMainMenu.cpp" />
+    <ClCompile Include="uiPaused.cpp" />
+    <ClCompile Include="uiStatistics.cpp" />
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -140,14 +145,21 @@
     <ClInclude Include="gameLevel.h" />
     <ClInclude Include="geometry.h" />
     <ClInclude Include="handler.h" />
-    <ClInclude Include="json.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="particles.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="uiMainMenu.h" />
+    <ClInclude Include="uiPaused.h" />
+    <ClInclude Include="uiStatistics.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Xplorer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="DeclareDPIAware.manifest">
+      <SubType>Designer</SubType>
+    </Manifest>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

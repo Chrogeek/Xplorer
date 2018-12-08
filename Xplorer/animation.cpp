@@ -1,14 +1,16 @@
 #include "defs.h"
 #include <algorithm>
 #include <d2d1.h>
+#include "game.h"
 #include "gameFrame.h"
 #include "animation.h"
 
-extern animation currentAnimation;
+extern animation animator;
 extern gameFrame *currentFrame;
 extern gameFrame *animationFrame;
 extern ID2D1DCRenderTarget *mainRenderer;
 extern ID2D1Factory *d2dFactory;
+extern gameHero hero;
 
 double linearAnimation::progress(DWORD time) {
 	DWORD timeNow = std::min(time, timeStart + totalTime);
@@ -41,12 +43,11 @@ arcAnimation::arcAnimation(DWORD time, DWORD interval) {
 	totalTime = interval;
 }
 
-void animation::startAnimation(ID2D1Bitmap *target, animationHelper *helper, voidBitmapPointDoubleFunction onFrame, voidFunction finish, pointVector central) {
+void animation::startAnimation(ID2D1Bitmap *target, animationHelper *helper, voidBitmapDoubleFunction onFrame, voidFunction finish) {
 	image = target;
 	this->helper = helper;
 	this->onFrame = onFrame;
 	this->finish = finish;
-	this->central = central;
 	currentFrame = animationFrame;
 }
 
@@ -54,12 +55,17 @@ void animation::routine() {
 	DWORD timeNow = timeGetTime();
 	if (helper == nullptr) return;
 	double progress = helper->progress(timeNow);
+	if (onFrame != nullptr) onFrame(image, progress);
 	if (timeNow >= helper->timeStart + helper->totalTime) {
 		delete helper;
 		helper = nullptr;
-		finish();
+		if (finish != nullptr) finish();
 	}
-	onFrame(image, central, progress);
+}
+
+bool animation::expired() {
+	if (helper == nullptr) return true;
+	return timeGetTime() >= helper->timeStart + helper->totalTime;
 }
 
 animation::animation() {
@@ -68,17 +74,15 @@ animation::animation() {
 	image = nullptr;
 }
 
-void circularExpand(ID2D1Bitmap *bitmap, pointVector point, double progress) {
-	D2D1_SIZE_F sizeF = bitmap->GetSize();
+void circularExpand(ID2D1Bitmap *bitmap, double progress) {
+	rectFloat srcRect, destRect;
+	pointVector point = rectCenter(hero.rect());
+	getRenderRect(bitmap, hero, srcRect, destRect);
 
-	float rLeft = std::max(0.f, std::min((float)point.vX - windowClientWidth / 2.f, (float)sizeF.width - windowClientWidth));
-	float rTop = std::max(0.f, std::min((float)point.vY - windowClientHeight / 2.f, (float)sizeF.height - windowClientHeight));
+	pointVector center = point - pointVector(srcRect.left, srcRect.top) + pointVector(destRect.left, destRect.top);
 
-	pointVector center = point - pointVector(rLeft, rTop);
-
-	double dist = sqrt(pow(std::max(center.vX, windowClientWidth - center.vX), 2.0) + pow(std::max(center.vY, windowClientHeight - center.vY), 2.0));
-	float len = (float)(dist * progress);
-
+	double dist = sqrt(pow(std::max(center.vX - destRect.left, destRect.right - center.vX), 2.0) + pow(std::max(center.vY - destRect.top, destRect.bottom - center.vY), 2.0));
+	float len = std::max((float)(dist * progress), (float)maxDelta);
 	HRESULT result = S_OK;
 
 	ID2D1EllipseGeometry *ellipse = nullptr;
@@ -91,15 +95,15 @@ void circularExpand(ID2D1Bitmap *bitmap, pointVector point, double progress) {
 	}
 	if (SUCCEEDED(result)) {
 		mainRenderer->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), ellipse), pLayer);
-		mainRenderer->DrawBitmap(bitmap, makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF(rLeft, rTop, rLeft + windowClientWidth, rTop + windowClientHeight));
+		renderGameFrame(bitmap, hero, srcRect, destRect, (float)progress);
 		mainRenderer->PopLayer();
 	}
 	safeRelease(pLayer);
 	safeRelease(ellipse);
 }
 
-void crossExpand(ID2D1Bitmap *bitmap, pointVector point, double progress) {
-	const int k = 7;
+void crossOut(ID2D1Bitmap *bitmap, double progress) {
+	const int k = 25;
 	mainRenderer->Clear();
 	for (int i = 0; i < k; ++i) {
 		double x;
@@ -111,7 +115,7 @@ void crossExpand(ID2D1Bitmap *bitmap, pointVector point, double progress) {
 			if (i % 2 == 1) x = -x;
 		}
 		x *= windowClientWidth;
-		int top = (int)((double(i) / double(k)) * windowClientHeight), bottom = (int)((double(i + 1) / double(k)) * windowClientHeight);
+		int top = (int)((double(i) / double(k)) * windowClientHeight), bottom = (int)((double(i + 1) / double(k)) * windowClientHeight) + 1;
 		mainRenderer->DrawBitmap(bitmap,
 			makeRectF((float)x, (float)top, (float)(x + windowClientWidth), (float)bottom),
 			1.f,
@@ -121,16 +125,15 @@ void crossExpand(ID2D1Bitmap *bitmap, pointVector point, double progress) {
 	}
 }
 
-void circularShrink(ID2D1Bitmap *bitmap, pointVector point, double progress) {
-	D2D1_SIZE_F sizeF = bitmap->GetSize();
+void circularShrink(ID2D1Bitmap *bitmap, double progress) {
+	rectFloat srcRect, destRect;
+	pointVector point = rectCenter(hero.rect());
+	getRenderRect(bitmap, hero, srcRect, destRect);
 
-	float rLeft = std::max(0.f, std::min((float)point.vX - windowClientWidth / 2.f, (float)sizeF.width - windowClientWidth));
-	float rTop = std::max(0.f, std::min((float)point.vY - windowClientHeight / 2.f, (float)sizeF.height - windowClientHeight));
+	pointVector center = point - pointVector(srcRect.left, srcRect.top) + pointVector(destRect.left, destRect.top);
 
-	pointVector center = point - pointVector(rLeft, rTop);
-
-	double dist = sqrt(pow(std::max(center.vX, windowClientWidth - center.vX), 2.0) + pow(std::max(center.vY, windowClientHeight - center.vY), 2.0));
-	float len = (float)(dist * (1.0 - progress));
+	double dist = sqrt(pow(std::max(center.vX, destRect.right - center.vX), 2.0) + pow(std::max(center.vY, destRect.bottom - center.vY), 2.0));
+	float len = std::max((float)(dist * (1.0 - progress)), (float)maxDelta);
 
 	HRESULT result = S_OK;
 
@@ -144,9 +147,45 @@ void circularShrink(ID2D1Bitmap *bitmap, pointVector point, double progress) {
 	}
 	if (SUCCEEDED(result)) {
 		mainRenderer->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), ellipse), pLayer);
-		mainRenderer->DrawBitmap(bitmap, makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF(rLeft, rTop, rLeft + windowClientWidth, rTop + windowClientHeight));
+		renderGameFrame(bitmap, hero, srcRect, destRect, 1.f - (float)progress);
 		mainRenderer->PopLayer();
 	}
 	safeRelease(pLayer);
 	safeRelease(ellipse);
+}
+
+void crossIn(ID2D1Bitmap *bitmap, double progress) {
+	const int k = 25;
+	progress = 1.0 - progress;
+	mainRenderer->Clear();
+	for (int i = 0; i < k; ++i) {
+		double x;
+		if (k == 1) {
+			x = pow(progress, 2.0);
+		} else {
+			double t = std::min(2.0 / 3.0, std::max(0.0, progress - (k - 1 - i) / (3.0 * (k - 1))));
+			x = 2.25 * pow(t, 2.0);
+			if (i % 2 == 0) x = -x;
+		}
+		x *= windowClientWidth;
+		int top = (int)((double(i) / double(k)) * windowClientHeight), bottom = (int)((double(i + 1) / double(k)) * windowClientHeight) + 1;
+		mainRenderer->DrawBitmap(bitmap,
+			makeRectF((float)x, (float)top, (float)(x + windowClientWidth), (float)bottom),
+			1.f,
+			D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+			makeRectF(0.f, (float)top, (float)windowClientWidth, (float)bottom)
+		);
+	}
+}
+
+void fadeIn(ID2D1Bitmap *bitmap, double progress) {
+	rectFloat srcRect, destRect;
+	getRenderRect(bitmap, hero, srcRect, destRect);
+	mainRenderer->DrawBitmap(bitmap, destRect, (float)progress, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, srcRect);
+}
+
+void fadeOut(ID2D1Bitmap *bitmap, double progress) {
+	rectFloat srcRect, destRect;
+	getRenderRect(bitmap, hero, srcRect, destRect);
+	mainRenderer->DrawBitmap(bitmap, destRect, (float)(1.0 - progress), D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, srcRect);
 }

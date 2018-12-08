@@ -29,15 +29,18 @@ struct arcAnimation : public animationHelper {
 struct animation {
 	ID2D1Bitmap *image; // which image to animate on
 	animationHelper *helper;
-	pointVector central;
-	void startAnimation(ID2D1Bitmap *, animationHelper *, voidBitmapPointDoubleFunction, voidFunction, pointVector = pointVector(0.0, 0.0));
-	void routine();
-	voidBitmapPointDoubleFunction onFrame;
+	voidBitmapDoubleFunction onFrame;
 	voidFunction finish;
+	void startAnimation(ID2D1Bitmap *, animationHelper *, voidBitmapDoubleFunction, voidFunction);
+	void routine();
+	bool expired();
 	animation();
 };
 
-void circularExpand(ID2D1Bitmap *, pointVector, double);
-void crossExpand(ID2D1Bitmap *, pointVector, double);
-void circularShrink(ID2D1Bitmap *, pointVector, double);
+void circularExpand(ID2D1Bitmap *, double);
+void crossOut(ID2D1Bitmap *, double);
+void circularShrink(ID2D1Bitmap *, double);
+void crossIn(ID2D1Bitmap *, double);
+void fadeIn(ID2D1Bitmap *, double);
+void fadeOut(ID2D1Bitmap *, double);
 #endif

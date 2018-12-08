@@ -14,6 +14,8 @@
 
 using json = nlohmann::json;
 
+std::vector<int> getNumericInDirectory(std::string);
+
 struct gameLevel {
 	// Object of a single level
 	int rows, columns;
@@ -22,22 +24,33 @@ struct gameLevel {
 	ID2D1Bitmap *objects;
 	gameFrame *frame;
 	pointVector initialPosition;
+	json saveData;
 	gameResult load(std::string);
+	gameResult save(std::string);
 	gameLevel();
 	~gameLevel();
 };
 
 struct gameChapter {
 	// Chapter object (manages levels)
-	std::string chapterName;
+//	std::string chapterName;
 	std::vector<gameLevel> levels;
+	json saveData;
 	gameResult load(std::string);
+	gameResult save(std::string);
 };
 
 struct gameManager {
 	// Root object of the game (manages chapters)
 	std::vector<gameChapter> chapters;
+	json saveData;
 	gameResult load(std::string);
+	gameResult save(std::string);
 };
+
+gameLevel &theLevel();
+gameChapter &theChapter();
+
+void deleteSave();
 
 #endif

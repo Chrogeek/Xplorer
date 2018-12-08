@@ -30,10 +30,12 @@
 #include "utility.h"
 #include "handler.h"
 #include "main.h"
+#include "animation.h"
 
 extern ID2D1DCRenderTarget *mainRenderer;
 extern ID2D1Factory *d2dFactory;
 extern float dpiX, dpiY;
+extern animation animator;
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	switch (msg) {
@@ -44,7 +46,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 				PostQuitMessage(0);
 				break;
 			}
-			d2dFactory->GetDesktopDpi(&dpiX, &dpiY);
 
 			// Adjust window size to make its internal area (client area) just the size of windowClientWidth * windowClientHeight.
 			RECT rect1, rect2;
@@ -63,6 +64,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 			initializeGame();
 			UpdateWindow(hwnd);
 			SetTimer(hwnd, gameTimerID, timerInterval, nullptr);
+
+			currentFrame = nullptr;
+			animator.startAnimation(nullptr, new linearAnimation(timeGetTime(), shortAnimation), nullptr, showMainMenu);
 			break;
 		}
 		case WM_TIMER:
@@ -94,27 +98,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		}
 		case WM_LBUTTONDOWN:
 		{
-			gameMouseDown(hwnd, XplorerLeftButton, LOWORD(lparam), HIWORD(lparam));
+			gameMouseDown(hwnd, XplorerLeftButton, (double)LOWORD(lparam), (double)HIWORD(lparam));
 			break;
 		}
 		case WM_RBUTTONDOWN:
 		{
-			gameMouseDown(hwnd, XplorerRightButton, LOWORD(lparam), HIWORD(lparam));
+			gameMouseDown(hwnd, XplorerRightButton, (double)LOWORD(lparam), (double)HIWORD(lparam));
 			break;
 		}
 		case WM_LBUTTONUP:
 		{
-			gameMouseUp(hwnd, XplorerLeftButton, LOWORD(lparam), HIWORD(lparam));
+			gameMouseUp(hwnd, XplorerLeftButton, (double)LOWORD(lparam), (double)HIWORD(lparam));
 			break;
 		}
 		case WM_RBUTTONUP:
 		{
-			gameMouseUp(hwnd, XplorerRightButton, LOWORD(lparam), HIWORD(lparam));
+			gameMouseUp(hwnd, XplorerRightButton, (double)LOWORD(lparam), (double)HIWORD(lparam));
 			break;
 		}
 		case WM_MOUSEMOVE:
 		{
-			gameMouseMove(hwnd, 0, LOWORD(lparam), HIWORD(lparam));
+			gameMouseMove(hwnd, 0, (double)LOWORD(lparam), (double)HIWORD(lparam));
 			break;
 		}
 		case WM_KEYDOWN:
@@ -151,6 +155,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MessageBox(nullptr, "Window Registration Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
 		return 0;
 	}
+
+	//SetProcessDPIAware();
 
 	char titleBuffer[bufferSize];
 	sprintf_s(titleBuffer, bufferSize, "%s %s %s", appName, appVersionString, appEdition);

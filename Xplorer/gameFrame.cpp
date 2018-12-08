@@ -7,7 +7,7 @@ gameFrame::gameFrame() {
 	brush = nullptr;
 	bitmap = nullptr;
 	renderer = nullptr;
-	render = nullptr;
+	render = exit = enter = nullptr;
 }
 
 gameFrame::~gameFrame() {

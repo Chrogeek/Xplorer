@@ -36,32 +36,40 @@ typedef D2D1_RECT_F rectFloat;
 typedef int gameResult;
 
 typedef void(*voidFunction)();
-typedef void(*voidBitmapPointDoubleFunction)(ID2D1Bitmap *, pointVector, double);
+typedef void(*voidBitmapDoubleFunction)(ID2D1Bitmap *, double);
+
+typedef long long longint;
 
 #include <windows.h>
 #include "utility.h"
 
+// Buffer size
 const int bufferSize = 4096;
 const int smallBufferSize = 256;
 
+// Application metadata
 const char appName[] = "Xplorer";
 const int appVersion = MAKELONG(MAKEWORD(0, 0), MAKEWORD(0, 0));
 const char appVersionString[] = "0.1";
 const char appEdition[] = "pre-Alpha";
 
+// Window size
 const int windowClientWidth = 896;
 const int windowClientHeight = 672;
 
+// Resource names
 const WCHAR gameFontName[] = L"Microsoft YaHei UI";
 
 const WCHAR wallImageName[] = L"images/wall.png";
 const WCHAR heroImageName[] = L"images/hero.png";
 const WCHAR savedImageName[] = L"images/saved.png";
 
+// Mouse buttons
 const int XplorerLeftButton = 1;
 const int XplorerRightButton = 2;
 const int XplorerMiddleButton = 4;
 
+// Frame numbers (deprecated?)
 const int frameDeath = -4;
 const int frameStartAnimation = -3;
 const int frameMainMenu = -2;
@@ -70,22 +78,29 @@ const int frameGameMain = 0;
 
 const int maxStage = 1;
 
+// Button IDs
 const int buttonStart = 1;
 const int buttonExit = 2;
 const int buttonOptions = 3;
 const int buttonTutorial = 4;
-const int maxButton = 4;
+const int buttonContinue = 5;
+const int buttonRetry = 6;
+const int buttonHome = 7;
+const int buttonLoad = 8;
+const int maxButton = 8;
 
 const int buttonNull = -1;
 
+// Sizes
 const int unitSize = 32;
 
-const double heroSizeMultiplier = 1.4;
+const double heroSizeMultiplier = 1.0;
 const double heroSize = unitSize * heroSizeMultiplier;
 const double heroSideMargin = 9 * heroSizeMultiplier;
 const double heroTopMargin = 10 * heroSizeMultiplier;
 const double heroBottomMargin = 0 * heroSizeMultiplier;
 
+// Hero states
 const int heroLeft = 12;
 const int heroRight = 0;
 const int heroStanding = 0;
@@ -93,6 +108,7 @@ const int heroWalking = 4;
 const int heroFalling = 8;
 const int heroJumping = 10;
 
+// Block types
 const int blockEmpty = -1;
 const int blockNeedleUp = 2;
 const int blockNeedleDown = 3;
@@ -103,30 +119,55 @@ const int blockWormhole = 7;
 const int blockWall = 15;
 const int blockStartingPoint = 1;
 
-const int maxFPS = 80;
+// Particle types
+const int particleUniform = 1;
+const int particleGravitational = 2;
+const pointVector particleMaxVelocity = {1.5 * unitSize, 5.0 * unitSize};
+const pointVector particleMinVelocity = {-1.5 * unitSize, 0.0};
+
+// Clock
+const int maxFPS = 160;
 const int timerInterval = int(1000.0 / maxFPS);
 
-const pointVector maxVelocity = {6.0 * unitSize, 30.0 * unitSize};
-const pointVector minVelocity = {-6.0 * unitSize, -30.0 * unitSize};
-const pointVector jumpStartVelocity = {0.0, -14.0 * unitSize};
-const pointVector jumpAcceleration = {0.0, -25.0 * unitSize};
-const pointVector gravityAcceleration = {0.0, 40.0 * unitSize};
-const pointVector moveAcceleration = {18.0 * unitSize, 0.0};
+// Velocity & acceleration
+const pointVector maxVelocity = {6.0 * unitSize, 18.0 * unitSize};
+const pointVector minVelocity = {-6.0 * unitSize, -18.0 * unitSize};
+const pointVector jumpVelocityDelta[2] = {{0.0, -12.65 * unitSize}, {0.0, -9.80 * unitSize}};
+const pointVector gravityAcceleration = {0.0, 32.0 * unitSize};
+const pointVector moveAcceleration = {40.0 * unitSize, 0.0};
 
+// Deltas
 const double epsilon = 4e-7;
 const double minDelta = 0.1;
 const double midDelta = 0.3;
 const double maxDelta = 0.5;
 
+// Timer
 const UINT gameTimerID = 100;
+const int shortAnimation = 400;
+const int mediumAnimation = 800;
+const int longAnimation = 1200;
 
+// Jump related
 const int jumpKey = VK_SHIFT;
-const UINT maxJumpTime = 150; // max jump key hold time in milliseconds
+const DWORD maxJumpTime = 300; // max jump key hold time in milliseconds
 
+// Xplorer custom result constants
 const gameResult fileBroken = -1;
 const gameResult okay = 0;
 const gameResult direct2DError = -3;
 
+// Config item name
+const char itemDeaths[] = "totalDeaths";
+const char itemTime[] = "totalTime";
+const char itemLastSaved[] = "lastSaved";
+const char itemLastX[] = "lastSavedX";
+const char itemLastY[] = "lastSavedY";
+const char itemChapterCount[] = "chapters";
+const char itemLevelCount[] = "levels";
+const char itemTitle[] = "title";
+
+// Enumerations
 enum directionX {
 	directionLeft = 0,
 	directionRight

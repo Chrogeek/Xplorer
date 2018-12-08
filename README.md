@@ -25,3 +25,31 @@ A 2D jumping game. Also the assignment of Fundamentals of Programming course @ T
 			* `data.json`: map data for the level
 			* `tiles.json`: tile set for the level
 			* `save.json`: save config for the level
+
+## To-Do list
+
+* [] Add statistics (for both single chapter and the whole game process)
+* [] Add options
+* [] Add About frame
+
+* [] Add 'thanks for playing'
+* [] Add music & sounds & more background pictures
+
+* [] Add death splash (important)
+
+* [] Improve double jumping
+
+## Story
+
+The game is set on faraway planets. Theme: the universe.
+
+* Chapter 0: Welcome to Xplorer
+* Chapter 1: Departure
+* Chapter 2: Cathey
+* Chapter 3: Dhosey
+* Chapter 4: Khaiocey
+* Chapter 5: Back to Earth
+* Chapter 6: Where the Dream Ends
+* Chapter 7: Thanks for Playing!
+
+**The trial version contains only Chapters 0, 1, 4 and 7.**
