@@ -29,6 +29,7 @@
 #include <fstream>
 #include <algorithm>
 #include <exception>
+#include <d2d1.h>
 #include <dwrite.h>
 #include <windows.h>
 #include <wincodec.h>
@@ -36,6 +37,7 @@
 #include "utility.h"
 #include "gameFrame.h"
 #include "animation.h"
+#include "particles.h"
 
 #define DEBUG
 
@@ -45,12 +47,23 @@ extern ID2D1DCRenderTarget *mainRenderer;
 extern buttonUI *buttons[maxStage + 1];
 extern gameFrame *currentFrame, *nextFrame, *lastFrame;
 extern animation animator;
+extern std::vector<particle *> particles;
+extern IDWriteFactory *writeFactory;
+extern ID2D1SolidColorBrush *brushWhite;
 
-buttonUI::buttonUI(double x, double y, double w, double h, const WCHAR *fileName) {
+buttonUI::buttonUI(double x, double y, double w, double h, std::wstring caption, const WCHAR *fileName) {
 	this->x = x, this->y = y, this->width = w, this->height = h;
 	this->enabled = false;
 	this->buttonImage = nullptr;
+	this->caption = caption;
 	loadBitmapFromFile(mainRenderer, imageFactory, fileName, (UINT)w, (UINT)h, &this->buttonImage);
+}
+
+void clearParticles(std::vector<particle *> &particles) {
+	for (int i = 0; i < (int)particles.size(); ++i) {
+		delete particles[i];
+	}
+	particles.clear();
 }
 
 void doEvents() {
@@ -176,6 +189,13 @@ rectReal rectF2R(rectFloat r) {
 	return makeRectR((double)r.left, (double)r.top, (double)r.right, (double)r.bottom);
 }
 
+D2D1_POINT_2F pointToD2Point(pointVector x) {
+	D2D1_POINT_2F ans;
+	ans.x = (float)x.vX;
+	ans.y = (float)x.vY;
+	return ans;
+}
+
 int getNumberFromString(std::string s) {
 	int ans = 0;
 	for (unsigned i = 0; i < s.length(); ++i) {
@@ -185,10 +205,16 @@ int getNumberFromString(std::string s) {
 	return ans;
 }
 
-std::string intToString(int x) {
+std::string intToString(longint x) {
 	char buf[bufferSize];
-	sprintf_s<bufferSize>(buf, "%d", x);
+	sprintf_s<bufferSize>(buf, "%lld", x);
 	return std::string(buf);
+}
+
+std::wstring intToWideString(longint x) {
+	WCHAR buf[bufferSize];
+	swprintf_s<bufferSize>(buf, L"%lld", x);
+	return std::wstring(buf);
 }
 
 std::wstring stringToWidestring(std::string str) {
@@ -197,10 +223,58 @@ std::wstring stringToWidestring(std::string str) {
 	return std::wstring(ans);
 }
 
+std::wstring secondsToWideString(double seconds) {
+	longint milli = longint(seconds * 1000.0);
+	WCHAR buf[bufferSize];
+	if (milli <= 60000ll) {
+		swprintf_s<bufferSize>(buf, L"%lld.%02lld", milli / 1000ll, (milli % 1000ll) / 10);
+	} else if (milli <= 3600000ll) {
+		swprintf_s<bufferSize>(buf, L"%lld:%02lld.%02lld", milli / 60000ll, (milli % 60000ll) / 1000ll, (milli % 1000ll) / 10);
+	} else {
+		swprintf_s<bufferSize>(buf, L"%lld:%02lld:%02lld.%02lld", milli / 3600000ll, (milli % 3600000ll) / 60000ll, (milli % 60000ll) / 1000ll, (milli % 1000ll) / 10);
+	}
+	return std::wstring(buf);
+}
+
+std::wstring doubleToWideString(double value) {
+	WCHAR buf[bufferSize];
+	swprintf_s<bufferSize>(buf, L"%0.2lf", value);
+	return std::wstring(buf);
+}
+
+bool isStringEndIn(std::string text, std::string pattern) {
+	int n = (int)text.length(), m = (int)pattern.length();
+	if (n < m) return false;
+	std::string subs = text.substr(n - m, m);
+	return toLower(subs) == toLower(pattern);
+}
+
+void getFontFamilyWeight(std::string full, std::string &family, DWRITE_FONT_WEIGHT &weight) {
+	int p = (int)full.find_last_of(' ');
+	std::string wWord;
+	if (p == std::string::npos) family = "", wWord = "";
+	else family = full.substr(0, p), wWord = full.substr(p + 1);
+	wWord = toLower(wWord);
+
+	weight = DWRITE_FONT_WEIGHT_REGULAR;
+	if (wWord == "thin") weight = DWRITE_FONT_WEIGHT_THIN;
+	else if (wWord == "extralight" || wWord == "ultralight") weight = DWRITE_FONT_WEIGHT_ULTRA_LIGHT;
+	else if (wWord == "light") weight = DWRITE_FONT_WEIGHT_LIGHT;
+	else if (wWord == "semilight") weight = DWRITE_FONT_WEIGHT_SEMI_LIGHT;
+	else if (wWord == "normal" || wWord == "regular") weight = DWRITE_FONT_WEIGHT_REGULAR;
+	else if (wWord == "medium") weight = DWRITE_FONT_WEIGHT_MEDIUM;
+	else if (wWord == "demibold" || wWord == "semibold") weight = DWRITE_FONT_WEIGHT_SEMI_BOLD;
+	else if (wWord == "bold") weight = DWRITE_FONT_WEIGHT_BOLD;
+	else if (wWord == "extrabold" || wWord == "ultrabold") weight = DWRITE_FONT_WEIGHT_ULTRA_BOLD;
+	else if (wWord == "black" || wWord == "heavy") weight = DWRITE_FONT_WEIGHT_HEAVY;
+	else if (wWord == "extrablack" || wWord == "ultrablack") weight = DWRITE_FONT_WEIGHT_ULTRA_BLACK;
+}
+
 void drawButton(ID2D1RenderTarget *renderer, buttonUI *button) {
 	if (button == nullptr) return;
 	if (button->buttonImage == nullptr) return;
 	renderer->DrawBitmap(button->buttonImage, makeRectF((float)button->x, (float)button->y, (float)(button->x + button->width), (float)(button->y + button->height)));
+	drawText(renderer, writeFactory, std::wstring(gameFontName), DWRITE_FONT_WEIGHT_LIGHT, false, std::min((float)button->height * 0.6f, 45.f), button->caption, makeRectF((float)button->x, (float)button->y, (float)(button->x + button->width), (float)(button->y + button->height - 4.f)), DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, brushWhite);
 }
 
 void disableAllButtons() {
@@ -215,6 +289,7 @@ int getClickedButtonID(double X, double Y) {
 	for (int i = 0; i <= maxButton; ++i) {
 		buttonUI *btn = buttons[i];
 		if (btn == nullptr) continue;
+		if (!btn->enabled) continue;
 		if (isInRect(X, Y, btn->x, btn->y, btn->x + btn->width, btn->y + btn->height)) return i;
 	}
 	return buttonNull;
@@ -452,11 +527,17 @@ gameResult loadJSONFromFile(std::string file, json &data) {
 	}
 }
 
-HRESULT drawText(ID2D1RenderTarget *renderer, IDWriteFactory *writeFactory, std::wstring fontFamilyName, bool isBold, bool isItalic, float fontSize,  std::wstring text, rectFloat layout, ID2D1Brush *brush) {
+HRESULT drawText(ID2D1RenderTarget *renderer, IDWriteFactory *writeFactory, std::wstring fontFamilyName, DWRITE_FONT_WEIGHT weight, bool isItalic, float fontSize,  std::wstring text, rectFloat layout, DWRITE_TEXT_ALIGNMENT hAlign, DWRITE_PARAGRAPH_ALIGNMENT vAlign, ID2D1Brush *brush) {
 	HRESULT result = S_OK;
 	IDWriteTextFormat *textFormat = nullptr;
 	if (SUCCEEDED(result)) {
-		result = writeFactory->CreateTextFormat(fontFamilyName.c_str(), nullptr, isBold ? DWRITE_FONT_WEIGHT_BOLD : DWRITE_FONT_WEIGHT_REGULAR, isItalic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"en-us", &textFormat);
+		result = writeFactory->CreateTextFormat(fontFamilyName.c_str(), nullptr, weight, isItalic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"en-us", &textFormat);
+	}
+	if (SUCCEEDED(result)) {
+		result = textFormat->SetTextAlignment(hAlign);
+	}
+	if (SUCCEEDED(result)) {
+		result = textFormat->SetParagraphAlignment(vAlign);
 	}
 	if (SUCCEEDED(result)) {
 		renderer->DrawTextA(text.c_str(), (UINT32)text.length(), textFormat, layout, brush);
@@ -466,9 +547,9 @@ HRESULT drawText(ID2D1RenderTarget *renderer, IDWriteFactory *writeFactory, std:
 
 void switchToFrame(gameFrame *newFrame) {
 	lastFrame = currentFrame;
-	if (currentFrame != nullptr && currentFrame->exit != nullptr) {
+	if (currentFrame != nullptr && currentFrame->leave != nullptr) {
 		nextFrame = newFrame;
-		currentFrame->exit();
+		currentFrame->leave();
 	} else newFrame->enter();
 }
 
@@ -477,5 +558,62 @@ void loadNextFrame() {
 }
 
 double randomDouble(double l, double r) {
-	return rand() / (double)(RAND_MAX) * (r - l) + l;
+	double ans = rand() / (double)(RAND_MAX) * (r - l) + l;
+//	printf("random: %0.2lf~%0.2lf, ans = %0.2lf\n", l, r, ans);
+	return ans;
+}
+
+std::string toLower(std::string str) {
+	for (int i = 0; i < (int)str.length(); ++i) str[i] = tolower(str[i]);
+	return str;
+}
+
+void makeRain() {
+	const int count = 1200;
+	particles.clear();
+	particles.resize(count);
+	for (int i = 0; i < count; ++i) {
+		particles[i] = new particle(particleUniform, D2D1::ColorF(D2D1::ColorF::LightGray));
+		particles[i]->v = pointVector(50.0, 600.0);
+		particles[i]->p = pointVector(randomDouble(0.0, (double)windowClientWidth), randomDouble(0.0, (double)windowClientHeight));
+	}
+}
+
+void renderRain(float opacity) {
+	const int count = 1200;
+	for (int i = 0; i < count; ++i) {
+		bool ans = particles[i]->updateAndRender(mainRenderer, makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight), makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight), opacity);
+		if (ans) {
+			delete particles[i];
+			particles[i] = new particle(particleUniform, D2D1::ColorF(D2D1::ColorF::LightGray));
+			particles[i]->v = pointVector(50.0, 1200.0);
+			particles[i]->p = pointVector(randomDouble(0.0, (double)windowClientWidth), randomDouble(0.0, (double)windowClientHeight));
+		}
+	}
+}
+
+HRESULT getTextSize(IDWriteFactory *writeFactory, std::wstring fontFamilyName, DWRITE_FONT_WEIGHT weight, bool isItalic, float fontSize, std::wstring text, DWRITE_TEXT_ALIGNMENT hAlign, DWRITE_PARAGRAPH_ALIGNMENT vAlign, float maxWidth, float maxHeight, D2D1_SIZE_F &size) {
+	HRESULT result = S_OK;
+	IDWriteTextLayout* textLayout = nullptr;
+	IDWriteTextFormat *textFormat = nullptr;
+	if (SUCCEEDED(result)) {
+		result = writeFactory->CreateTextFormat(fontFamilyName.c_str(), nullptr, weight, isItalic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"en-us", &textFormat);
+	}
+	if (SUCCEEDED(result)) {
+		result = textFormat->SetTextAlignment(hAlign);
+	}
+	if (SUCCEEDED(result)) {
+		result = textFormat->SetParagraphAlignment(vAlign);
+	}
+	if (SUCCEEDED(result)) {
+		result = writeFactory->CreateTextLayout(text.c_str(), (UINT32)text.length(), textFormat, maxWidth, maxHeight, &textLayout);
+	}
+	if (SUCCEEDED(result)) {
+		DWRITE_TEXT_METRICS textMetrics;
+		result = textLayout->GetMetrics(&textMetrics);
+		size = D2D1::SizeF(ceil(textMetrics.widthIncludingTrailingWhitespace), ceil(textMetrics.height));
+	}
+	safeRelease(textFormat);
+	safeRelease(textLayout);
+	return result;
 }

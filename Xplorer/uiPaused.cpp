@@ -9,6 +9,7 @@
 #include "gameFrame.h"
 #include "uiPaused.h"
 #include "gameLevel.h"
+#include "particles.h"
 
 extern gameFrame *pausedFrame, *nextFrame;
 extern buttonUI *buttons[maxButton + 1];
@@ -44,7 +45,7 @@ void loadPausedFrame() {
 		drawButton(pausedFrame->renderer, buttons[buttonRetry]);
 		drawButton(pausedFrame->renderer, buttons[buttonHome]);
 
-		drawText(pausedFrame->renderer, writeFactory, std::wstring(gameFontName) + L" Light", false, false, 70, std::wstring(L"Paused"), makeRectF(200.f, 20.f, windowClientWidth - 200.f, 95.f), brushWhite);
+		drawText(pausedFrame->renderer, writeFactory, std::wstring(gameFontName), DWRITE_FONT_WEIGHT_LIGHT, false, 70, std::wstring(L"Paused"), makeRectF(200.f, 20.f, windowClientWidth - 200.f, 95.f), DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, brushWhite);
 
 		pausedFrame->renderer->EndDraw();
 	}
@@ -52,11 +53,12 @@ void loadPausedFrame() {
 		result = pausedFrame->renderer->GetBitmap(&pausedFrame->bitmap);
 	}
 	pausedFrame->enter = showPaused;
-	pausedFrame->exit = leavePaused;
+	pausedFrame->leave = leavePaused;
 }
 
 void renderPaused() {
 	mainRenderer->DrawBitmap(pausedFrame->bitmap, makeRectF(0.f, 0.f, (float)windowClientWidth, (float)windowClientHeight));
+	renderRain(0.08f);
 }
 
 void showPausedFinish() {
@@ -64,11 +66,17 @@ void showPausedFinish() {
 }
 
 void showPaused() {
+	makeRain();
+	disableAllButtons();
+	buttons[buttonContinue]->enabled = true;
+	buttons[buttonRetry]->enabled = true;
+	buttons[buttonHome]->enabled = true;
 	animator.startAnimation(pausedFrame->bitmap, new linearAnimation(timeGetTime(), shortAnimation), showPausedFrame, showPausedFinish);
 }
 
 void showPausedFrame(ID2D1Bitmap *bitmap, double progress) {
 	crossIn(bitmap, progress);
+	renderRain((float)progress * 0.08f);
 }
 
 void leavePaused() {
@@ -77,6 +85,7 @@ void leavePaused() {
 
 void leavePausedFrame(ID2D1Bitmap *bitmap, double progress) {
 	crossOut(bitmap, progress);
+	renderRain((float)(1.0 - progress) * 0.08f);
 }
 
 void leavePausedFinish() {

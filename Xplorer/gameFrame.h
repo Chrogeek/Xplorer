@@ -9,7 +9,7 @@ struct gameFrame {
 	ID2D1BitmapRenderTarget *renderer;
 	ID2D1Bitmap *bitmap;
 	ID2D1BitmapBrush *brush;
-	voidFunction render, exit, enter;
+	voidFunction render, leave, enter;
 	gameFrame();
 	~gameFrame();
 };

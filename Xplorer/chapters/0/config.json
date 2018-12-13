@@ -1,6 +1,9 @@
 {
-    "lastSaved": 1,
-    "title": "",
-    "totalDeaths": 0,
-    "totalTime": 0.0
+    "distance": 37941.43012243288,
+    "doubleJumps": 91,
+    "jumps": 201,
+    "lastSaved": 6,
+    "title": "Welcome to Xplorer",
+    "totalDeaths": 25,
+    "totalTime": 262.9099999999792
 }

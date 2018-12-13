@@ -11,6 +11,7 @@
 #include "json.h"
 #include "gameLevel.h"
 #include "utility.h"
+#include "music.h"
 
 extern float dpiX, dpiY;
 
@@ -57,15 +58,14 @@ gameResult gameLevel::load(std::string folder) {
 
 	if (!saveData.count(itemLastX)) saveData[itemLastX] = -1.0;
 	if (!saveData.count(itemLastY)) saveData[itemLastY] = -1.0;
-	if (!saveData.count(itemTime)) saveData[itemTime] = 0ll;
-	if (!saveData.count(itemDeaths)) saveData[itemDeaths] = 0;
 
 	// Step 2: make the grid
 
 	rows = data["height"];
 	columns = data["width"];
 	grid.resize(columns);
-	for (int i = 0; i < columns; ++i) grid[i].resize(rows);
+	touchTime.resize(columns);
+	for (int i = 0; i < columns; ++i) grid[i].resize(rows), touchTime[i].resize(rows);
 	for (int j = 0, k = 0; j < rows; ++j) for (int i = 0; i < columns; ++i, ++k)  {
 		grid[i][j] = data["layers"][1]["data"][k] - 1;
 	}
@@ -103,12 +103,15 @@ gameResult gameLevel::load(std::string folder) {
 	safeRelease(background);
 
 	if (SUCCEEDED(result)) {
+		DWORD timeCurrent = timeGetTime();
 		for (int i = 0; i < columns; ++i) for (int j = 0; j < rows; ++j) {
 			if (grid[i][j] == blockEmpty) continue;
-			if (grid[i][j] == blockStartingPoint) {
+			else if (grid[i][j] == blockStartingPoint) {
 				initialPosition.vX = (double)i * unitSize;
 				initialPosition.vY = (double)(j + 1) * unitSize - heroSize;
 				continue;
+			} else if (grid[i][j] == blockFragile) {
+				continue; // Fragile tiles are not prerendered
 			}
 			frame->renderer->DrawBitmap(objects, makeRectF((float)i * unitSize, (float)j * unitSize, (float)(i + 1) * unitSize, (float)(j + 1) * unitSize), 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF((float)grid[i][j] * unitSize, 0.f, (float)(grid[i][j] + 1) * unitSize, (float)unitSize));
 		}
@@ -124,9 +127,28 @@ gameResult gameLevel::load(std::string folder) {
 			if (textObject["text"]["italic"] == true) isItalic = true;
 			float fontSize = textObject["text"].count("pixelsize") ? (float)textObject["text"]["pixelsize"] : 16.f;
 
-			result = drawText(frame->renderer, writeFactory, stringToWidestring(textObject["text"]["fontfamily"]),
-				isBold, isItalic, fontSize, text, makeRectF((float)textObject["x"], (float)textObject["y"],
-				(float)textObject["x"] + (float)textObject["width"], (float)textObject["y"] + (float)textObject["height"]), brushBlack);
+			std::string hAlign = toLower(textObject["text"].count("halign") ? textObject["text"]["halign"] : "left");
+			std::string vAlign = toLower(textObject["text"].count("valign") ? textObject["text"]["valign"] : "top");
+			DWRITE_TEXT_ALIGNMENT hA;
+			DWRITE_PARAGRAPH_ALIGNMENT vA;
+
+			if (hAlign == "left") hA = DWRITE_TEXT_ALIGNMENT_LEADING;
+			else if (hAlign == "right") hA = DWRITE_TEXT_ALIGNMENT_TRAILING;
+			else if (hAlign == "center") hA = DWRITE_TEXT_ALIGNMENT_CENTER;
+			else hA = DWRITE_TEXT_ALIGNMENT_JUSTIFIED;
+
+			if (vAlign == "top") vA = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
+			else if (vAlign == "center") vA = DWRITE_PARAGRAPH_ALIGNMENT_CENTER;
+			else vA = DWRITE_PARAGRAPH_ALIGNMENT_FAR;
+			
+			DWRITE_FONT_WEIGHT weight = DWRITE_FONT_WEIGHT_REGULAR;
+			std::string fontFamily;
+			
+			getFontFamilyWeight(textObject["text"]["fontfamily"], fontFamily, weight);
+
+			result = drawText(frame->renderer, writeFactory, stringToWidestring(fontFamily),
+				weight, isItalic, fontSize, text, makeRectF((float)textObject["x"], (float)textObject["y"],
+				(float)textObject["x"] + (float)textObject["width"], (float)textObject["y"] + (float)textObject["height"]), hA, vA, brushBlack);
 		}
 	}
 
@@ -164,15 +186,20 @@ gameLevel::~gameLevel() {
 
 gameResult gameChapter::load(std::string folder) {
 	loadJSONFromFile(folder + "/config.json", saveData);
-	if (!saveData.count(itemTitle)) saveData[itemTitle] = "";
+	//if (!saveData.count(itemTitle)) saveData[itemTitle] = "";
 	if (!saveData.count(itemTime)) saveData[itemTime] = 0.0;
 	if (!saveData.count(itemDeaths)) saveData[itemDeaths] = 0;
 	if (!saveData.count(itemLastSaved)) saveData[itemLastSaved] = -1;
+	if (!saveData.count(itemDistance)) saveData[itemDistance] = 0.0;
+	if (!saveData.count(itemTitle)) saveData[itemTitle] = "";
+	if (!saveData.count(itemJumps)) saveData[itemJumps] = 0;
+	if (!saveData.count(itemDoubleJumps)) saveData[itemDoubleJumps] = 0;
 	std::vector<int> levelID = getNumericInDirectory(folder);
 	levels.resize(levelID.size());
 	for (unsigned i = 0; i < levels.size(); ++i) {
 	//	printf("Loading level %d\n", levelID[i]);
 		levels[i].load(folder + "/" + intToString(levelID[i]));
+		levels[i].id = levelID[i];
 	}
 	if (saveData[itemLastSaved] >= 0) currentLevel = saveData[itemLastSaved];
 	return okay;
@@ -191,11 +218,21 @@ gameResult gameManager::load(std::string folder) {
 	if (!saveData.count(itemTime)) saveData[itemTime] = 0.0;
 	if (!saveData.count(itemDeaths)) saveData[itemDeaths] = 0;
 	if (!saveData.count(itemLastSaved)) saveData[itemLastSaved] = -1;
+	if (!saveData.count(itemDistance)) saveData[itemDistance] = 0.0;
+	if (!saveData.count(itemXplorations)) saveData[itemXplorations] = 0;
+	if (!saveData.count(itemJumps)) saveData[itemJumps] = 0;
+	if (!saveData.count(itemDoubleJumps)) saveData[itemDoubleJumps] = 0;
+	if (!saveData.count(itemVictories)) saveData[itemVictories] = 0;
+	if (!saveData.count(itemVolume)) saveData[itemVolume] = 0.5;
+
+	setVolume((float)saveData[itemVolume]);
+
 	std::vector<int> chapterID = getNumericInDirectory(folder);
 	chapters.resize(chapterID.size());
 	for (unsigned i = 0; i < chapters.size(); ++i) {
 	//	printf("Loading chapter %d\n", chapterID[i]);
 		chapters[i].load(folder + "/" + intToString(chapterID[i]));
+		chapters[i].id = chapterID[i];
 	}
 	if (saveData[itemLastSaved] >= 0) currentChapter = saveData[itemLastSaved];
 	return okay;
@@ -221,6 +258,11 @@ void deleteSave() {
 	gameMaster.saveData[itemLastSaved] = -1;
 	for (int i = 0; i < (int)gameMaster.chapters.size(); ++i) {
 		gameMaster.chapters[i].saveData[itemLastSaved] = -1;
+		gameMaster.chapters[i].saveData[itemDistance] = 0.0;
+		gameMaster.chapters[i].saveData[itemJumps] = 0;
+		gameMaster.chapters[i].saveData[itemDoubleJumps] = 0;
+		gameMaster.chapters[i].saveData[itemDeaths] = 0;
+		gameMaster.chapters[i].saveData[itemTime] = 0.0;
 		for (int j = 0; j < (int)gameMaster.chapters[i].levels.size(); ++j) {
 			gameMaster.chapters[i].levels[j].saveData[itemLastX] = -1.0;
 			gameMaster.chapters[i].levels[j].saveData[itemLastY] = -1.0;

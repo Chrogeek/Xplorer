@@ -79,13 +79,27 @@ HRESULT initializeGraphics() {
 		result = mainRenderer->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &brushWhite);
 	}
 
-	buttons[buttonStart] = new buttonUI(300, 300, 200, 80, L"images/startButton.png");
-	buttons[buttonExit] = new buttonUI(windowClientWidth - 135, windowClientHeight - 60, 120, 45, L"images/exitButton.png");
-	buttons[buttonContinue] = new buttonUI((windowClientWidth - 140) / 2, 200, 280, 105, L"images/continueButton.png");
-	buttons[buttonRetry] = new buttonUI((windowClientWidth - 140) / 2, 335, 280, 105, L"images/retryButton.png");
-	buttons[buttonHome] = new buttonUI((windowClientWidth - 140) / 2, 470, 280, 105, L"images/homeButton.png");
-	buttons[buttonLoad] = new buttonUI(300, 420, 200, 75, L"images/loadButton.png");
-	buttons[buttonTutorial] = new buttonUI(300, 520, 200, 75, L"images/tutorialButton.png");
+	buttons[buttonNew] = new buttonUI(100.0, 395.0, 200.0, 75.0, L"New", L"images/newButton.png");
+	buttons[buttonLoad] = new buttonUI(windowClientWidth - 300.0, 395.0, 200.0, 75.0, L"Load", L"images/loadButton.png");
+
+	double gap = (windowClientWidth - 480.f) / 5.f;
+
+	buttons[buttonAbout] = new buttonUI(gap, windowClientHeight - 60.0, 120.0, 45.0, L"About", L"images/aboutButton.png");
+	buttons[buttonOptions] = new buttonUI(gap * 2 + 120.0, windowClientHeight - 60.0, 120.0, 45.0, L"Options", L"images/optionsButton.png");
+	buttons[buttonStatistics] = new buttonUI(gap * 3 + 240.0, windowClientHeight - 60.0, 120.0, 45.0, L"Statistics", L"images/statisticsButton.png");
+	buttons[buttonExit] = new buttonUI(gap * 4 + 360.0, windowClientHeight - 60.0, 120.0, 45.0, L"Exit", L"images/exitButton.png");
+
+	buttons[buttonContinue] = new buttonUI((windowClientWidth - 240.0) / 2.0, 250.0, 240.0, 90.0, L"Continue", L"images/continueButton.png");
+	buttons[buttonRetry] = new buttonUI((windowClientWidth - 240.0) / 2.0, 385.0, 240.0, 90.0, L"Retry", L"images/retryButton.png");
+	buttons[buttonHome] = new buttonUI((windowClientWidth - 240.0) / 2.0, 520.0, 240.0, 90.0, L"Home", L"images/homeButton.png");
+	buttons[buttonStatisticsContinue] = new buttonUI(windowClientWidth / 2.0 - 100.0, (windowClientHeight + 505.0 - 75.0) / 2.0, 200.0, 75.0, L"Continue", L"images/continueButton.png");
+
+	buttons[buttonAboutContinue] = new buttonUI((windowClientWidth / 2.0 - 200.0) / 2.0, windowClientHeight - 90.0, 200.0, 75.0, L"Back", L"images/homeButton.png");
+	buttons[buttonViewOnGitHub] = new buttonUI((windowClientWidth / 2.0 - 200.0) / 2.0, windowClientHeight - 145.0, 200.0, 40.0, L"View on GitHub", L"images/viewGitHub.png");
+
+	buttons[buttonOptionsBack] = new buttonUI(windowClientWidth - 215.0, windowClientHeight - 90.0, 200.0, 75.0, L"Back", L"images/homeButton.png");
+	buttons[buttonDeleteSave] = new buttonUI(15.0, windowClientHeight - 55.0, 200.0, 40.0, L"Delete Saved Game", L"images/deleteSave.png");
+	buttons[buttonVolumeSlider] = new buttonUI(190.0, 160.0, windowClientWidth - 300.0, 30.0);
 
 	if (SUCCEEDED(result)) {
 		loadMainFrame();
@@ -93,7 +107,7 @@ HRESULT initializeGraphics() {
 		safeNew(inGameFrame, gameFrame);
 		inGameFrame->render = renderGame;
 		inGameFrame->enter = gameFrameEnter;
-		inGameFrame->exit = gameFrameLeave;
+		inGameFrame->leave = gameFrameLeave;
 
 		safeNew(animationFrame, gameFrame);
 

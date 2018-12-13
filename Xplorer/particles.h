@@ -9,7 +9,11 @@ struct particle {
 	pointVector p, v;
 	int type;
 	D2D1_COLOR_F color;
-	particle(int);
+	DWORD initTime, lastTime;
+	particle(int, D2D1_COLOR_F);
+	bool update(rectFloat);
+	void render(ID2D1RenderTarget *, rectFloat, rectFloat, float);
+	bool updateAndRender(ID2D1RenderTarget *, rectFloat, rectFloat, float);
 };
 
 #endif

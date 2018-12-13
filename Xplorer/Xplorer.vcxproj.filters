@@ -54,6 +54,15 @@
     <ClCompile Include="particles.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="music.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="uiAbout.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="uiOptions.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defs.h">
@@ -98,6 +107,15 @@
     <ClInclude Include="particles.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="music.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="uiAbout.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="uiOptions.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Xplorer.rc">
@@ -106,5 +124,13 @@
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="DeclareDPIAware.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon1.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="images\logo.ico">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

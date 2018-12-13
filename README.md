@@ -1,5 +1,5 @@
 # Xplorer
-A 2D jumping game. Also the assignment of Fundamentals of Programming course @ Tsinghua University.
+A 2D jumping game. PA of Fundamentals of Programming course @ Tsinghua University.
 
 ## Project structure
 
@@ -28,16 +28,11 @@ A 2D jumping game. Also the assignment of Fundamentals of Programming course @ T
 
 ## To-Do list
 
-* [] Add statistics (for both single chapter and the whole game process)
 * [] Add options
-* [] Add About frame
 
-* [] Add 'thanks for playing'
-* [] Add music & sounds & more background pictures
+* [] Add sounds & more background pictures
 
-* [] Add death splash (important)
-
-* [] Improve double jumping
+* [] Design levels (Chapters 0, 1, 7)
 
 ## Story
 
@@ -52,4 +47,4 @@ The game is set on faraway planets. Theme: the universe.
 * Chapter 6: Where the Dream Ends
 * Chapter 7: Thanks for Playing!
 
-**The trial version contains only Chapters 0, 1, 4 and 7.**
+**The trial version contains only Chapters 0, 1 and 7.**

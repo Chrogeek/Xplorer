@@ -49,16 +49,16 @@ const int smallBufferSize = 256;
 
 // Application metadata
 const char appName[] = "Xplorer";
-const int appVersion = MAKELONG(MAKEWORD(0, 0), MAKEWORD(0, 0));
-const char appVersionString[] = "0.1";
-const char appEdition[] = "pre-Alpha";
+const char appVersionString[] = "1.0";
+const char appEdition[] = "Beta (PA)";
+const WCHAR appCopyright[] = L"Copyright (C) 2018 Chrogeek.\nAll Rights Reserved.";
 
 // Window size
 const int windowClientWidth = 896;
 const int windowClientHeight = 672;
 
 // Resource names
-const WCHAR gameFontName[] = L"Microsoft YaHei UI";
+const WCHAR gameFontName[] = L"Segoe UI";
 
 const WCHAR wallImageName[] = L"images/wall.png";
 const WCHAR heroImageName[] = L"images/hero.png";
@@ -79,15 +79,22 @@ const int frameGameMain = 0;
 const int maxStage = 1;
 
 // Button IDs
-const int buttonStart = 1;
+const int buttonNew = 1;
 const int buttonExit = 2;
 const int buttonOptions = 3;
-const int buttonTutorial = 4;
+const int buttonAboutContinue = 4;
 const int buttonContinue = 5;
 const int buttonRetry = 6;
 const int buttonHome = 7;
 const int buttonLoad = 8;
-const int maxButton = 8;
+const int buttonStatisticsContinue = 9;
+const int buttonStatistics = 10;
+const int buttonVolumeSlider = 11;
+const int buttonAbout = 12;
+const int buttonViewOnGitHub = 13;
+const int buttonOptionsBack = 14;
+const int buttonDeleteSave = 15;
+const int maxButton = 15;
 
 const int buttonNull = -1;
 
@@ -116,23 +123,28 @@ const int blockNeedleRight = 4;
 const int blockNeedleLeft = 5;
 const int blockCheckpoint = 6;
 const int blockWormhole = 7;
+const int blockFragile = 14;
 const int blockWall = 15;
 const int blockStartingPoint = 1;
+
+// Fragile tiles
+const DWORD fragileTimeLast = 800;
+const DWORD fragileTimeDisappear = 4000;
 
 // Particle types
 const int particleUniform = 1;
 const int particleGravitational = 2;
-const pointVector particleMaxVelocity = {1.5 * unitSize, 5.0 * unitSize};
-const pointVector particleMinVelocity = {-1.5 * unitSize, 0.0};
+const pointVector particleMaxVelocity = {80.0 * unitSize, 4.0 * unitSize};
+const pointVector particleMinVelocity = {-80.0 * unitSize, -90.0 * unitSize};
 
 // Clock
-const int maxFPS = 160;
+const int maxFPS = 500;
 const int timerInterval = int(1000.0 / maxFPS);
 
 // Velocity & acceleration
-const pointVector maxVelocity = {6.0 * unitSize, 18.0 * unitSize};
-const pointVector minVelocity = {-6.0 * unitSize, -18.0 * unitSize};
-const pointVector jumpVelocityDelta[2] = {{0.0, -12.65 * unitSize}, {0.0, -9.80 * unitSize}};
+const pointVector maxVelocity = {5.0 * unitSize, 18.0 * unitSize};
+const pointVector minVelocity = {-5.0 * unitSize, -18.0 * unitSize};
+const pointVector jumpVelocityDelta[2] = {{0.0, -13.0 * unitSize}, {0.0, -10.0 * unitSize}};
 const pointVector gravityAcceleration = {0.0, 32.0 * unitSize};
 const pointVector moveAcceleration = {40.0 * unitSize, 0.0};
 
@@ -147,6 +159,8 @@ const UINT gameTimerID = 100;
 const int shortAnimation = 400;
 const int mediumAnimation = 800;
 const int longAnimation = 1200;
+
+const DWORD maxParticleLife = 2000;
 
 // Jump related
 const int jumpKey = VK_SHIFT;
@@ -163,9 +177,24 @@ const char itemTime[] = "totalTime";
 const char itemLastSaved[] = "lastSaved";
 const char itemLastX[] = "lastSavedX";
 const char itemLastY[] = "lastSavedY";
-const char itemChapterCount[] = "chapters";
-const char itemLevelCount[] = "levels";
+const char itemDistance[] = "distance";
+const char itemXplorations[] = "xplorations";
+const char itemJumps[] = "jumps";
+const char itemDoubleJumps[] = "doubleJumps";
 const char itemTitle[] = "title";
+const char itemVictories[] = "victories";
+const char itemVolume[] = "volume";
+
+// Music file IDs
+const int musicMain = 0;
+const int musicGame = 1;
+const int musicAbout = 2;
+const int soundPenalty = 3;
+const int soundSave = 4;
+const int soundDeath = 5;
+const int soundLevelUp = 6;
+const int soundCollision = 7;
+const int soundClick = 8;
 
 // Enumerations
 enum directionX {

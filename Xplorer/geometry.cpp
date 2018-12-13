@@ -35,11 +35,11 @@ pointVector &pointVector::operator-=(pointVector b) {
 	return *this;
 }
 
-double pointVector::length() {
+double pointVector::length() const {
 	return sqrt(vX * vX + vY * vY);
 }
 
-double pointVector::polar() {
+double pointVector::polar() const {
 	return atan2(vY, vX);
 }
 

@@ -1,0 +1,33 @@
+About Xplorer: A platform game
+
+Author: Chrogeek
+
+Music:
+* Main BGM: FireFrost - EnV
+* Game BGM: Extracted from PopCap(R) Bejeweled 3
+
+Beta (PA) version, for testing purpose only.
+
+Stay tuned at https://github.com/Chrogeek/Xplorer for public release!
+
+===============================
+
+This is free software: you are free to change and redistribute it.
+
+There is NO WARRANTY, to the extent permitted by law. See GNU General Public License (version 3) document for more details.
+
+You should have received a GNU GPL v3 license document with this software; if not, see http://www.gnu.org/licenses/.
+
+Source code available at https://github.com/Chrogeek/Xplorer, distributed under the GNU GPL v3 License.
+
+===============================
+
+Third Party Tools and Libraries
+
+1. Direct2D: A hardware-based graphics engine developed by Microsoft, compatible with Microsoft Windows 7 (and later). Much more complex than GDI, but also much more efficient.
+
+2. nlohmann/json (https://github.com/nlohmann/json): for parsing JSON data. MIT License.
+
+3. BASS.dll (https://www.un4seen.com/bass.html): an audio library developed by Un4seen Developments. This software utilize this library with a free, non-commercial license.
+
+4. bjorn/tiled (https://github.com/bjorn/tiled): an open-source visual map editor, supports XML and json as its file format.

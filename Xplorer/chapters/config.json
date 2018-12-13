@@ -1,5 +1,11 @@
 {
+    "distance": 1381619.3174260946,
+    "doubleJumps": 4132,
+    "jumps": 6308,
     "lastSaved": 0,
-    "totalDeaths": 0,
-    "totalTime": 0.0
+    "totalDeaths": 338,
+    "totalTime": 6630.698000006794,
+    "victories": 12,
+    "volume": 1.0,
+    "xplorations": 81
 }

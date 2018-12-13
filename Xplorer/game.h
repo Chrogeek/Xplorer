@@ -38,6 +38,7 @@ struct gameHero {
 	bool lockX, lockY;
 	directionX face;
 	int jumpCount;
+	bool dead;
 	void move(pointVector, double);
 	double left();
 	double top();
@@ -76,6 +77,7 @@ void startLevelAnimationFinish();
 void levelUpAnimationFinish();
 
 void levelUpHoldFrame(ID2D1Bitmap *, double);
+void nextChapter();
 void levelUpHoldFinish();
 
 void getRenderRect(ID2D1Bitmap *, gameHero &, rectFloat &, rectFloat &);
@@ -84,5 +86,7 @@ void renderGameFrame(ID2D1Bitmap *, gameHero &, rectFloat, rectFloat, float);
 void gameFrameEnter();
 void gameFrameLeave();
 void gameFrameLeaveFinish();
+
+void heroDie();
 
 #endif

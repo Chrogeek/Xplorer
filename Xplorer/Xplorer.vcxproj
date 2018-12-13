@@ -86,7 +86,8 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>d2d1.lib;dwrite.lib;windowscodecs.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;dwrite.lib;windowscodecs.lib;winmm.lib;bass.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\Chrogeek\Desktop\Xplorer\Xplorer;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -119,7 +120,8 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d2d1.lib;dwrite.lib;windowscodecs.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;dwrite.lib;windowscodecs.lib;winmm.lib;bass.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\Chrogeek\Desktop\Xplorer\Xplorer;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -131,8 +133,11 @@
     <ClCompile Include="global.cpp" />
     <ClCompile Include="handler.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="music.cpp" />
     <ClCompile Include="particles.cpp" />
+    <ClCompile Include="uiAbout.cpp" />
     <ClCompile Include="uiMainMenu.cpp" />
+    <ClCompile Include="uiOptions.cpp" />
     <ClCompile Include="uiPaused.cpp" />
     <ClCompile Include="uiStatistics.cpp" />
     <ClCompile Include="utility.cpp" />
@@ -146,9 +151,12 @@
     <ClInclude Include="geometry.h" />
     <ClInclude Include="handler.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="music.h" />
     <ClInclude Include="particles.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="uiAbout.h" />
     <ClInclude Include="uiMainMenu.h" />
+    <ClInclude Include="uiOptions.h" />
     <ClInclude Include="uiPaused.h" />
     <ClInclude Include="uiStatistics.h" />
     <ClInclude Include="utility.h" />
@@ -160,6 +168,10 @@
     <Manifest Include="DeclareDPIAware.manifest">
       <SubType>Designer</SubType>
     </Manifest>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon1.ico" />
+    <Image Include="images\logo.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

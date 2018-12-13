@@ -115,10 +115,10 @@ void crossOut(ID2D1Bitmap *bitmap, double progress) {
 			if (i % 2 == 1) x = -x;
 		}
 		x *= windowClientWidth;
-		int top = (int)((double(i) / double(k)) * windowClientHeight), bottom = (int)((double(i + 1) / double(k)) * windowClientHeight) + 1;
+		int top = (int)((double(i) / double(k)) * windowClientHeight), bottom = (int)((double(i + 1) / double(k)) * windowClientHeight);
 		mainRenderer->DrawBitmap(bitmap,
 			makeRectF((float)x, (float)top, (float)(x + windowClientWidth), (float)bottom),
-			1.f,
+			float(1.0 - progress),
 			D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
 			makeRectF(0.f, (float)top, (float)windowClientWidth, (float)bottom)
 		);
@@ -168,10 +168,10 @@ void crossIn(ID2D1Bitmap *bitmap, double progress) {
 			if (i % 2 == 0) x = -x;
 		}
 		x *= windowClientWidth;
-		int top = (int)((double(i) / double(k)) * windowClientHeight), bottom = (int)((double(i + 1) / double(k)) * windowClientHeight) + 1;
+		int top = (int)((double(i) / double(k)) * windowClientHeight), bottom = (int)((double(i + 1) / double(k)) * windowClientHeight);
 		mainRenderer->DrawBitmap(bitmap,
 			makeRectF((float)x, (float)top, (float)(x + windowClientWidth), (float)bottom),
-			1.f,
+			(float)(1.0 - progress),
 			D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
 			makeRectF(0.f, (float)top, (float)windowClientWidth, (float)bottom)
 		);

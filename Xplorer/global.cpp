@@ -34,11 +34,15 @@
 #include "gameLevel.h"
 #include "gameFrame.h"
 #include "animation.h"
+#include "particles.h"
+
+// hWnd
+HWND gameWindow = nullptr;
 
 // Game frames
-gameFrame *statisticsFrame = nullptr, *optionFrame = nullptr, *aboutFrame = nullptr;
+gameFrame *statisticsFrame = nullptr, *optionsFrame = nullptr;
 gameFrame *mainFrame = nullptr, *inGameFrame = nullptr, *animationFrame = nullptr;
-gameFrame *pausedFrame = nullptr;
+gameFrame *pausedFrame = nullptr, *aboutFrame = nullptr;
 
 // Frames (pointers to frames defined above)
 gameFrame *lastFrame = nullptr, *currentFrame = nullptr, *nextFrame = nullptr;
@@ -57,6 +61,9 @@ ID2D1DCRenderTarget *mainRenderer = nullptr;
 ID2D1Bitmap *bkgImage = nullptr, *wallImage = nullptr, *heroImage = nullptr;
 ID2D1Bitmap *bitmapBackground = nullptr, *savedImage = nullptr;
 ID2D1SolidColorBrush *brushBlack = nullptr, *brushWhite = nullptr;
+
+// Particles
+std::vector<particle *> particles;
 
 // Animation helper object
 animation animator;

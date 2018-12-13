@@ -31,21 +31,31 @@
 #include "handler.h"
 #include "main.h"
 #include "animation.h"
+#include "music.h"
+#include "resource.h"
 
+extern HWND gameWindow;
 extern ID2D1DCRenderTarget *mainRenderer;
 extern ID2D1Factory *d2dFactory;
 extern float dpiX, dpiY;
 extern animation animator;
 
+HINSTANCE hInstance;
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	switch (msg) {
 		case WM_CREATE:
 		{
+			HICON hIcon = LoadIcon(((LPCREATESTRUCT)lparam)->hInstance, MAKEINTRESOURCE(IDI_ICON1));
+			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+
 			if (FAILED(initializeGraphics())) {
 				MessageBox(hwnd, "Graphics initialization failed!", "Error!", MB_ICONSTOP | MB_OK);
 				PostQuitMessage(0);
 				break;
 			}
+			
+			initializeMusic();
 
 			// Adjust window size to make its internal area (client area) just the size of windowClientWidth * windowClientHeight.
 			RECT rect1, rect2;
@@ -91,8 +101,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		case WM_DESTROY:
 		{
 			KillTimer(hwnd, gameTimerID);
-			terminateGraphics();
-			terminateGame();
 			PostQuitMessage(0);
 			break;
 		}
@@ -142,6 +150,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 	WNDCLASSEX wc;
 
+	::hInstance = hInstance;
+
 	memset(&wc, 0, sizeof wc);
 	wc.cbSize = sizeof wc;
 	wc.lpfnWndProc = WndProc;
@@ -161,7 +171,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	char titleBuffer[bufferSize];
 	sprintf_s(titleBuffer, bufferSize, "%s %s %s", appName, appVersionString, appEdition);
 
-	HWND gameWindow = CreateWindowEx(WS_EX_CLIENTEDGE, "WindowClass", titleBuffer, WS_VISIBLE | WS_OVERLAPPED | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, windowClientWidth, windowClientHeight, nullptr, nullptr, hInstance, nullptr);
+/*	HWND*/ gameWindow = CreateWindowEx(WS_EX_CLIENTEDGE, "WindowClass", titleBuffer, WS_VISIBLE | WS_OVERLAPPED | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, windowClientWidth, windowClientHeight, nullptr, nullptr, hInstance, nullptr);
 
 	if (gameWindow == nullptr) {
 		MessageBox(nullptr, "Window Creation Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
@@ -173,5 +183,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
+	terminateMusic();
+	terminateGraphics();
+	terminateGame();
 	return (int)msg.wParam;
 }

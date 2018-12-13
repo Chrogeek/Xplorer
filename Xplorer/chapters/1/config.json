@@ -1,6 +1,9 @@
 {
+    "distance": 0.0,
+    "doubleJumps": 0,
+    "jumps": 0,
     "lastSaved": -1,
-    "title": "",
+    "title": "Departure",
     "totalDeaths": 0,
-    "totalTime": 0
+    "totalTime": 0.0
 }

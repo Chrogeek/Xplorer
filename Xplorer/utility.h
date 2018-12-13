@@ -35,9 +35,13 @@
 #include "json.h"
 #include "gameFrame.h"
 #include "geometry.h"
+#include "particles.h"
 
 #define safeRelease(p) if (p != nullptr) { p->Release(); p = nullptr; }
 #define safeNew(p, q) if (p != nullptr) delete p; p = new q;
+
+#define increase(p, q, r) p = (q)(p) + r;
+#define decrease(p, q, r) p = (q)(p) - r;
 
 #ifndef HINST_THISCOMPONENT
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -49,8 +53,9 @@ using json = nlohmann::json;
 struct buttonUI {
 	double x, y, width, height;
 	bool enabled;
+	std::wstring caption;
 	ID2D1Bitmap *buttonImage;
-	buttonUI(double = 0.0, double = 0.0, double = 0.0, double = 0.0, const WCHAR * = nullptr);
+	buttonUI(double = 0.0, double = 0.0, double = 0.0, double = 0.0, std::wstring = L"", const WCHAR * = nullptr);
 };
 
 struct rectReal {
@@ -59,6 +64,8 @@ struct rectReal {
 	double right;
 	double bottom;
 };
+
+void clearParticles(std::vector<particle *> &);
 
 void doEvents();
 
@@ -98,10 +105,19 @@ D2D1_ELLIPSE makeEllipse(pointVector, double, double);
 
 rectFloat rectR2F(rectReal);
 rectReal rectF2R(rectFloat);
+D2D1_POINT_2F pointToD2Point(pointVector);
 
 int getNumberFromString(std::string);
-std::string intToString(int);
+std::string intToString(longint);
+std::wstring intToWideString(longint);
 std::wstring stringToWidestring(std::string);
+
+std::wstring secondsToWideString(double);
+std::wstring doubleToWideString(double);
+
+bool isStringEndIn(std::string, std::string);
+
+void getFontFamilyWeight(std::string, std::string &, DWRITE_FONT_WEIGHT &);
 
 void drawButton(ID2D1RenderTarget *, buttonUI *);
 void disableAllButtons();
@@ -116,10 +132,17 @@ void debugPrintF(const char *, ...);
 
 gameResult loadJSONFromFile(std::string, json &);
 
-HRESULT drawText(ID2D1RenderTarget *, IDWriteFactory *, std::wstring, bool, bool, float, std::wstring, rectFloat, ID2D1Brush *);
+HRESULT drawText(ID2D1RenderTarget *, IDWriteFactory *, std::wstring, DWRITE_FONT_WEIGHT, bool, float, std::wstring, rectFloat, DWRITE_TEXT_ALIGNMENT, DWRITE_PARAGRAPH_ALIGNMENT, ID2D1Brush *);
 
 void switchToFrame(gameFrame *);
 void loadNextFrame();
 
 double randomDouble(double, double);
+
+std::string toLower(std::string);
+
+void makeRain();
+void renderRain(float);
+
+HRESULT getTextSize(IDWriteFactory *, std::wstring, DWRITE_FONT_WEIGHT, bool, float, std::wstring, DWRITE_TEXT_ALIGNMENT, DWRITE_PARAGRAPH_ALIGNMENT, float, float, D2D1_SIZE_F &);
 #endif

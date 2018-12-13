@@ -20,11 +20,14 @@ struct gameLevel {
 	// Object of a single level
 	int rows, columns;
 	std::vector<std::vector<int> > grid;
+	std::vector<std::vector<DWORD> > touchTime;
 	//ID2D1BitmapRenderTarget *frame;
 	ID2D1Bitmap *objects;
 	gameFrame *frame;
 	pointVector initialPosition;
 	json saveData;
+	int id;
+	//std::string objectFile;
 	gameResult load(std::string);
 	gameResult save(std::string);
 	gameLevel();
@@ -33,9 +36,10 @@ struct gameLevel {
 
 struct gameChapter {
 	// Chapter object (manages levels)
-//	std::string chapterName;
+	std::string chapterName;
 	std::vector<gameLevel> levels;
 	json saveData;
+	int id;
 	gameResult load(std::string);
 	gameResult save(std::string);
 };

@@ -9,8 +9,7 @@
 void loadStatisticsFrame();
 void renderStatistics();
 
-void loadStatistics(std::string, gameChapter);
-void loadStatistics(std::string, gameManager);
+void loadStatistics(int);
 
 void showStatisticsFinish();
 void showStatistics();

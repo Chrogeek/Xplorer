@@ -13,8 +13,8 @@ struct pointVector {
 	pointVector operator/(double) const;
 	pointVector &operator+=(pointVector);
 	pointVector &operator-=(pointVector);
-	double length();
-	double polar();
+	double length() const;
+	double polar() const;
 };
 
 pointVector operator*(double, pointVector);
