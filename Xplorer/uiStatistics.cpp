@@ -33,25 +33,6 @@ double totalDistance, totalSeconds;
 int totalDeaths, totalXplorations;
 int totalJumps, totalDoubleJumps;
 int chapterID, totalVictories;
-double gradePoint;
-
-D2D1::ColorF hsvToRGB(double h, double s, double v, double a = 1.0) {
-	double c = v * s,
-		x = c * (1.0 - fabs((h / 60.0) - floor((h / 60.0) / 2.0) * 2.0 - 1.0)),
-		m = v - c;
-	double rr, gg, bb;
-	if (h < 60.0) rr = c, gg = x, bb = 0.0;
-	else if (h < 120.0) rr = x, gg = c, bb = 0.0;
-	else if (h < 180.0) rr = 0.0, gg = c, bb = x;
-	else if (h < 240.0) rr = 0.0, gg = x, bb = c;
-	else if (h < 300.0) rr = x, gg = 0.0, bb = c;
-	else rr = c, gg = 0.0, bb = x;
-	return D2D1::ColorF((float)(rr + m), (float)(gg + m), (float)(bb + m), (float)a);
-}
-
-D2D1::ColorF getGradePointColor(double gradePoint) {
-	return hsvToRGB(gradePoint * 30.0, 0.8, 0.8, 1.0);
-}
 
 void loadStatistics(int chapter) {
 	if (chapter < 0 || chapter > (int)gameMaster.chapters.size()) {
@@ -74,8 +55,6 @@ void loadStatistics(int chapter) {
 		totalDoubleJumps = gameMaster.chapters[chapter].saveData[itemDoubleJumps];
 		chapterID = chapter;
 		totalVictories = -1;
-		// calculate grade point
-		gradePoint = totalDeaths <= 0 ? 4.0 : std::min(log(std::max(totalSeconds / totalDeaths, 45.0) - 44.0) / log(156.0) * 3.9, 3.9);
 	}
 }
 
@@ -125,10 +104,6 @@ void loadStatisticsFrame() {
 			drawText(statisticsFrame->renderer, writeFactory, std::wstring(gameFontName), DWRITE_FONT_WEIGHT_SEMI_LIGHT, true, 24.f, std::wstring(L"Victories"),
 				makeRectF(100.f, 480.f, windowClientWidth, 505.f), DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, brushWhite
 			);
-		} else {
-			drawText(statisticsFrame->renderer, writeFactory, std::wstring(gameFontName), DWRITE_FONT_WEIGHT_SEMI_BOLD, true, 24.f, std::wstring(L"Grade Point"),
-				makeRectF(100.f, 480.f, windowClientWidth, 505.f), DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, brushWhite
-			);
 		}
 
 		drawText(statisticsFrame->renderer, writeFactory, std::wstring(gameFontName), DWRITE_FONT_WEIGHT_SEMI_BOLD, false, 24.f,
@@ -154,15 +129,6 @@ void loadStatisticsFrame() {
 			drawText(statisticsFrame->renderer, writeFactory, std::wstring(gameFontName), DWRITE_FONT_WEIGHT_SEMI_LIGHT, false, 24.f, intToWideString(totalVictories),
 				makeRectF(0.f, 480.f, windowClientWidth - 100.f, 505.f), DWRITE_TEXT_ALIGNMENT_TRAILING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, brushWhite
 			);
-		} else {
-			ID2D1SolidColorBrush *brush = nullptr;
-			statisticsFrame->renderer->CreateSolidColorBrush(getGradePointColor(gradePoint), &brush);
-			if (brush != nullptr) {
-				drawText(statisticsFrame->renderer, writeFactory, std::wstring(gameFontName), DWRITE_FONT_WEIGHT_SEMI_BOLD, false, 24.f, doubleToWideString(gradePoint),
-					makeRectF(0.f, 480.f, windowClientWidth - 100.f, 505.f), DWRITE_TEXT_ALIGNMENT_TRAILING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, brush
-				);
-			}
-			safeRelease(brush);
 		}
 
 		statisticsFrame->renderer->EndDraw();

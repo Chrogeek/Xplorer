@@ -41,4 +41,7 @@ int findListIndex(std::string);
 
 void setVolume(float);
 
+HSTREAM getMusicHandle(int, int = 0);
+HSTREAM getMusicHandle(std::string, int = 0);
+
 #endif

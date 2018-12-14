@@ -1,4 +1,5 @@
 #include "defs.h"
+#include <cmath>
 #include <d2d1.h>
 #include <dwrite.h>
 #include "game.h"
@@ -18,6 +19,7 @@ extern ID2D1DCRenderTarget *mainRenderer;
 extern animation animator;
 extern buttonUI *buttons[maxButton + 1];
 extern int currentChapter, currentLevel;
+extern ID2D1SolidColorBrush *brushWhite;
 
 void loadMainMenuButtons() {
 	disableAllButtons();
@@ -38,7 +40,7 @@ void loadMainFrame() {
 	if (SUCCEEDED(result)) {
 		result = mainRenderer->CreateCompatibleRenderTarget(makeSizeF((float)windowClientWidth, (float)windowClientHeight), &mainFrame->renderer);
 	}
-	
+
 	ID2D1Bitmap *background = nullptr;
 	ID2D1Bitmap *bigLogo = nullptr;
 	if (SUCCEEDED(result)) {

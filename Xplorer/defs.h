@@ -28,6 +28,7 @@
 
 #define NOMINMAX // disable visual c++'s default min/max macros
 
+#include <cmath>
 #include <d2d1.h>
 #include "geometry.h"
 
@@ -43,9 +44,12 @@ typedef long long longint;
 #include <windows.h>
 #include "utility.h"
 
+const double pi = acos(-1.0);
+
 // Buffer size
 const int bufferSize = 4096;
 const int smallBufferSize = 256;
+const int mediumBufferSize = 1024;
 
 // Application metadata
 const char appName[] = "Xplorer";
@@ -117,19 +121,29 @@ const int heroJumping = 10;
 
 // Block types
 const int blockEmpty = -1;
-const int blockNeedleUp = 2;
-const int blockNeedleDown = 3;
-const int blockNeedleRight = 4;
-const int blockNeedleLeft = 5;
+const int blockStartingPoint = 1;
+const int blockSpikeUp = 2;
+const int blockSpikeDown = 3;
+const int blockSpikeRight = 4;
+const int blockSpikeLeft = 5;
 const int blockCheckpoint = 6;
 const int blockWormhole = 7;
+const int blockDeadly = 13;
 const int blockFragile = 14;
 const int blockWall = 15;
-const int blockStartingPoint = 1;
+const int blockSpikeRightDown = 23;
+const int blockSpikeRightUp = 24;
+const int blockSpikeLeftDown = 25;
+const int blockSpikeLeftUp = 26;
+const int blockSpikeUpLeft = 27;
+const int blockSpikeUpRight = 28;
+const int blockSpikeDownLeft = 29;
+const int blockSpikeDownRight = 30;
 
 // Fragile tiles
-const DWORD fragileTimeLast = 800;
+const DWORD fragileTimeLast = 400;
 const DWORD fragileTimeDisappear = 4000;
+const DWORD fragileTimerInfinity = 1000000;
 
 // Particle types
 const int particleUniform = 1;

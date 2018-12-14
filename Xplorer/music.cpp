@@ -164,3 +164,12 @@ void setVolume(float volume) {
 		}
 	}
 }
+
+HSTREAM getMusicHandle(int id, int index) {
+	if (id < 0 || id >= (int)fileList.size()) return NULL;
+	return fileList[id].hMusic[index];
+}
+
+HSTREAM getMusicHandle(std::string id, int index) {
+	return getMusicHandle(findListIndex(id), index);
+}

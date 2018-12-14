@@ -1,16 +1,19 @@
 About Xplorer: A platform game
 
-Author: Chrogeek
+Design: Chrogeek
+Presented: Chrogeek
 
 Music:
 * Main BGM: FireFrost - EnV
 * Game BGM: Extracted from PopCap(R) Bejeweled 3
 
-Beta (PA) version, for testing purpose only.
+Beta (PA) version, for testing purposes only.
 
 Stay tuned at https://github.com/Chrogeek/Xplorer for public release!
 
 ===============================
+
+Legal Notice
 
 This is free software: you are free to change and redistribute it.
 
@@ -24,10 +27,10 @@ Source code available at https://github.com/Chrogeek/Xplorer, distributed under 
 
 Third Party Tools and Libraries
 
-1. Direct2D: A hardware-based graphics engine developed by Microsoft, compatible with Microsoft Windows 7 (and later). Much more complex than GDI, but also much more efficient.
+1. Direct2D (https://docs.microsoft.com/zh-cn/windows/desktop/Direct2D/direct2d-portal): A graphics engine developed by Microsoft, compatible with Microsoft Windows 7 (and later). Supports hardware acceleration.
 
-2. nlohmann/json (https://github.com/nlohmann/json): for parsing JSON data. MIT License.
+2. nlohmann/json (https://github.com/nlohmann/json): a C++ library for parsing JSON data. MIT License.
 
-3. BASS.dll (https://www.un4seen.com/bass.html): an audio library developed by Un4seen Developments. This software utilize this library with a free, non-commercial license.
+3. BASS.dll (https://www.un4seen.com/bass.html): a cross-platform audio library developed by Un4seen Developments. This software utilize this library with a free, non-commercial license.
 
-4. bjorn/tiled (https://github.com/bjorn/tiled): an open-source visual map editor, supports XML and json as its file format.
+4. bjorn/tiled (https://github.com/bjorn/tiled): an open-source visual map editor, supports XML and JSON as its file format.

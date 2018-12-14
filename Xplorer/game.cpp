@@ -119,7 +119,7 @@ polygon gameHero::poly() {
 }
 
 bool isFragileTileExist(int x, int y) {
-	DWORD delta = timeGetTime() - theLevel().touchTime[x][y];
+	DWORD delta = theLevel().touchTime[x][y];
 	return delta < fragileTimeLast || delta >= fragileTimeLast + fragileTimeDisappear;
 }
 
@@ -175,10 +175,21 @@ int yWall(gameHero hero) { // decides if the hero hits a block on the top/bottom
 	return 0;
 }
 
-void updateFragile(int X, int Y, DWORD timeNow) {
-	DWORD delta = timeNow - theLevel().touchTime[X][Y];
+void updateFragile(DWORD interval) {
+	for (int j = 0; j < (int)theLevel().rows; ++j) {
+		for (int i = 0; i < (int)theLevel().columns; ++i) {
+			if (theLevel().grid[i][j] == blockFragile) {
+				theLevel().touchTime[i][j] += interval;
+			}
+		}
+	}
+}
+
+void setFragile(int X, int Y, DWORD interval) {
+//	debugPrintF("setFragile: += %d\n", interval);
+	DWORD delta = theLevel().touchTime[X][Y];
 	if (delta >= fragileTimeLast + fragileTimeDisappear) {
-		theLevel().touchTime[X][Y] = timeNow;
+		theLevel().touchTime[X][Y] = 0;
 	}
 }
 
@@ -226,25 +237,14 @@ void updateHero() { // update hero data (position, velocity, ...)
 		hero.lockY = false; // if the hero is not standing on a block, and the hero is not on the bottom of the scene, then release it in direction y
 		hero.jumpCount = std::max(1, hero.jumpCount);
 	}
-	/*
-					if (delta >= fragileTimeDisappear + fragileTimeLast) {
-						// the fragile tile has reappeared, ignore this judge branch
-						// but before we continue, update the last touched time
-						theLevel().touchTime[i][j] = timeCurrent;
-					} else if (delta >= fragileTimeLast) {
-						// the fragile tile has been hidden, so it's empty now
-						continue;
-					} else {
-						// the fragile tile has just been stepped on, it's still wall
-						// do not update touched time in this branch
-					}*/
+	updateFragile(thisTime - lastTime);
 	if (isFragile(hero.left(), hero.bottom() + maxDelta)) {
 		int X = (int)floor(hero.left() / unitSize), Y = (int)floor((hero.bottom() + maxDelta) / unitSize);
-		updateFragile(X, Y, thisTime);
+		setFragile(X, Y, thisTime - lastTime);
 	}
 	if (isFragile(hero.right(), hero.bottom() + maxDelta)) {
 		int X = (int)floor(hero.right() / unitSize), Y = (int)floor((hero.bottom() + maxDelta) / unitSize);
-		updateFragile(X, Y, thisTime);
+		setFragile(X, Y, thisTime - lastTime);
 	}
 
 	deltaVelocity += gravityAcceleration;
@@ -302,7 +302,7 @@ int heroPositionAdjust(gameHero &hero) {
 				}
 				case blockFragile:
 				{
-					DWORD delta = timeCurrent - theLevel().touchTime[i][j];
+					DWORD delta = theLevel().touchTime[i][j];
 					if (delta >= fragileTimeDisappear + fragileTimeLast) {
 						// the fragile tile has reappeared, ignore this judge branch
 						// but before we continue, update the last touched time
@@ -339,10 +339,15 @@ int heroPositionAdjust(gameHero &hero) {
 				case blockWormhole:
 				{
 					double dist = (rectCenter(heroRect) - rectCenter(wallRect)).length();
-					if (dist < unitSize * heroSizeMultiplier * 0.25) ret |= heroLevelUp;
+					if (dist < unitSize * heroSizeMultiplier * 0.6) ret |= heroLevelUp;
 					continue;
 				}
-				case blockNeedleUp:
+				case blockDeadly:
+				{
+					ret |= heroDead;
+					continue;
+				}
+				case blockSpikeUp:
 				{
 					polygon triangle;
 					triangle.vertex.push_back(pointVector((i + 0.5) * unitSize, (double)j * unitSize));
@@ -351,7 +356,7 @@ int heroPositionAdjust(gameHero &hero) {
 					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
 					continue;
 				}
-				case blockNeedleDown:
+				case blockSpikeDown:
 				{
 					polygon triangle;
 					triangle.vertex.push_back(pointVector((i + 0.5) * unitSize, (double)(j + 1) * unitSize));
@@ -360,7 +365,7 @@ int heroPositionAdjust(gameHero &hero) {
 					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
 					continue;
 				}
-				case blockNeedleLeft:
+				case blockSpikeLeft:
 				{
 					polygon triangle;
 					triangle.vertex.push_back(pointVector((double)i * unitSize, (j + 0.5) * unitSize));
@@ -369,11 +374,83 @@ int heroPositionAdjust(gameHero &hero) {
 					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
 					continue;
 				}
-				case blockNeedleRight:
+				case blockSpikeRight:
 				{
 					polygon triangle;
 					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (j + 0.5) * unitSize));
 					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)j * unitSize));
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)(j + 1) * unitSize));
+					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
+					continue;
+				}
+				case blockSpikeRightDown:
+				{
+					polygon triangle;
+					triangle.vertex.push_back(pointVector((i + 0.5) * unitSize, (double)(j + 1) * unitSize));
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (double)(j + 1) * unitSize));
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (double)j * unitSize));
+					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
+					continue;
+				}
+				case blockSpikeRightUp:
+				{
+					polygon triangle;
+					triangle.vertex.push_back(pointVector((i + 0.5) * unitSize, (double)j * unitSize));
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (double)(j + 1) * unitSize));
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (double)j * unitSize));
+					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
+					continue;
+				}
+				case blockSpikeLeftDown:
+				{
+					polygon triangle;
+					triangle.vertex.push_back(pointVector((i + 0.5) * unitSize, (double)(j + 1) * unitSize));
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)(j + 1) * unitSize));
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)j * unitSize));
+					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
+					continue;
+				}
+				case blockSpikeLeftUp:
+				{
+					polygon triangle;
+					triangle.vertex.push_back(pointVector((i + 0.5) * unitSize, (double)j * unitSize));
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)(j + 1) * unitSize));
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)j * unitSize));
+					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
+					continue;
+				}
+				case blockSpikeUpLeft:
+				{
+					polygon triangle;
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (j + 0.5) * unitSize));
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (double)j * unitSize));
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)j * unitSize));
+					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
+					continue;
+				}
+				case blockSpikeUpRight:
+				{
+					polygon triangle;
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (j + 0.5) * unitSize));
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (double)j * unitSize));
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)j * unitSize));
+					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
+					continue;
+				}
+				case blockSpikeDownLeft:
+				{
+					polygon triangle;
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (j + 0.5) * unitSize));
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (double)(j + 1) * unitSize));
+					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)(j + 1) * unitSize));
+					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
+					continue;
+				}
+				case blockSpikeDownRight:
+				{
+					polygon triangle;
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (j + 0.5) * unitSize));
+					triangle.vertex.push_back(pointVector((double)(i + 1) * unitSize, (double)(j + 1) * unitSize));
 					triangle.vertex.push_back(pointVector((double)i * unitSize, (double)(j + 1) * unitSize));
 					if (isPolygonIntersect(triangle, hero.poly())) ret |= heroDead;
 					continue;
@@ -522,7 +599,7 @@ void startLevel(int chapterID, int levelID) {
 	DWORD timeCurrent = timeGetTime();
 	for (int i = 0; i < theLevel().columns; ++i) for (int j = 0; j < theLevel().rows; ++j) {
 		if (theLevel().grid[i][j] == blockFragile) {
-			theLevel().touchTime[i][j] = timeCurrent - fragileTimeLast - fragileTimeDisappear;
+			theLevel().touchTime[i][j] = fragileTimerInfinity;
 			continue; // Fragile tiles are not prerendered
 		}
 	}
@@ -614,11 +691,11 @@ void renderGameFrame(ID2D1Bitmap *bitmap, gameHero &hero, rectFloat srcRect, rec
 			wallRect.right = wallRect.left + unitSize;
 			wallRect.bottom = wallRect.top + unitSize;
 			if (theLevel().grid[i][j] == blockFragile) {
-				DWORD delta = timeCurrent - theLevel().touchTime[i][j];
+				DWORD delta = theLevel().touchTime[i][j];
 				if (delta < fragileTimeLast || delta >= fragileTimeLast + fragileTimeDisappear) {
 					mainRenderer->DrawBitmap(theLevel().objects,
 					//	wallRect - srcRect + destRect,
-						makeRectF(wallRect.left - rectDelta.vX, wallRect.top - rectDelta.vY, wallRect.right - rectDelta.vX, wallRect.bottom - rectDelta.vY),
+						makeRectF((float)(wallRect.left - rectDelta.vX), (float)(wallRect.top - rectDelta.vY), (float)(wallRect.right - rectDelta.vX), (float)(wallRect.bottom - rectDelta.vY)),
 						opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, makeRectF((float)blockFragile * unitSize, 0.f, (float)(blockFragile + 1) * unitSize, (float)unitSize)
 					);
 					//debugPrintF("%0.2lf %0.2lf %0.2lf %0.2lf\n", wallRect.left - rectDelta.vX, wallRect.top - rectDelta.vY, wallRect.right - rectDelta.vX, wallRect.top - rectDelta.vY);

@@ -3,7 +3,7 @@
  "layers":[
         {
          "id":3,
-         "image":"images\/bg_black.png",
+         "image":"images\/bg_tutorial.jpg",
          "name":"Image Layer",
          "opacity":1,
          "type":"imagelayer",

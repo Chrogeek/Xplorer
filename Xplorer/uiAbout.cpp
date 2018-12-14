@@ -28,6 +28,8 @@ extern gameFrame *currentFrame;
 extern animation animator;
 extern std::vector<particle *> particles;
 
+extern bool isKeyDown[128];
+
 double position;
 DWORD lastTime;
 std::string text;
@@ -87,10 +89,8 @@ void renderAboutFrame(float opacity) {
 	DWORD thisTime = timeGetTime();
 	if (lastTime == thisTime) return;
 	double interval = (thisTime - lastTime) / 1000.0;
-	position += interval * 80.0;
+	position += interval * 80.0 * ((isKeyDown[VK_UP] || isKeyDown[VK_SPACE]) ? 2.5 : 1.0) * (isKeyDown[VK_DOWN] ? 0.5 : 1.0);
 	if (position > fullHeight) position -= fullHeight;
-
-	//debugPrintF("position = %0.2lf\n", position);
 
 	ID2D1SolidColorBrush *brush = nullptr;
 	if (mainRenderer->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White, opacity), &brush) == S_OK) {
